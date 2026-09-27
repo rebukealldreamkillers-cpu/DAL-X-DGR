@@ -79,9 +79,10 @@ export default function InquiryPage() {
           <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">Jochanni Labs</p>
           <h1 className="text-2xl font-semibold mt-2">Start a Decision Governance Review</h1>
           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
-            A fixed-scope, four-week governance assessment for AI agents. We produce a signed
-            Governance Manifest — the DAL-X policy configuration that enforces each governance
-            posture at runtime. Fixed price. Engaged under mutual NDA.
+            A structured governance review completed in three working sessions within ten business
+            days after required evidence is received. We produce a signed Governance Manifest —
+            the DAL-X configuration that enforces each governance decision at runtime. Engaged
+            under mutual NDA.
           </p>
         </div>
 
