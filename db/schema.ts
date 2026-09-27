@@ -73,6 +73,11 @@ export const dalxSuitabilityEnum = pgEnum("dalx_suitability", [
   "NOT_SUITABLE",
 ]);
 
+export const riskTierEnum = pgEnum("risk_tier", [
+  "SIMPLIFIED",
+  "FULL",
+]);
+
 // ── Engagements ───────────────────────────────────────────────────────────────
 
 export const engagements = pgTable("engagements", {
@@ -111,6 +116,8 @@ export const registeredAgents = pgTable("registered_agents", {
   monthlyCallVolume: integer("monthly_call_volume"),
   modelTier: text("model_tier"),
   existingEvidenceStatus: evidenceTypeEnum("existing_evidence_status").default("NONE"),
+  riskTier: riskTierEnum("risk_tier"),
+  preliminaryDisposition: postureEnum("preliminary_disposition"),
   registrationStatus: registrationStatusEnum("registration_status").notNull().default("ACTIVE"),
   dalxRegistered: boolean("dalx_registered").notNull().default(false),
   sortOrder: integer("sort_order").notNull().default(0),
@@ -408,6 +415,7 @@ export const checkpointResponsesRelations = relations(checkpointResponses, ({ on
 
 // ── TypeScript Types ──────────────────────────────────────────────────────────
 
+export type RiskTier = "SIMPLIFIED" | "FULL";
 export type Posture = "KEEP" | "DOWNSIZE" | "REPLACE" | "KILL";
 export type Disposition = Posture;
 export type AuthorityLevel = "AUTO" | "REVIEW" | "ESCALATE" | "DENY";

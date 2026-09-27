@@ -1,13 +1,15 @@
 # Hero Page Prompt — Decision Governance Review
 ## For use with Lovable.dev
 
-This document contains the source of truth for the Decision Governance Review product page at jochannilabs.com/decision-governance-review.html. Use it to update the hero page so it accurately reflects the current four-section investigation model.
+This document is the source of truth for updating the Decision Governance Review product page at jochannilabs.com/decision-governance-review.html. Apply changes to the sections noted below. Sections not mentioned here should remain unchanged pending review.
 
 ---
 
 ## What the Product Is
 
-The Decision Governance Review (DGR) is a four-week structured engagement that produces one evidence-supported governance decision per AI-assisted workflow: Keep, Downsize, Replace, or Kill. Each decision comes with signed authority requirements for continued operation.
+The Decision Governance Review (DGR) is a structured governance engagement that produces one evidence-supported governance decision per AI-assisted workflow: Keep, Downsize, Replace, or Kill. Each decision comes with signed authority requirements for continued operation.
+
+It runs as three working sessions completed within ten business days after required evidence is received. The timeline depends on enterprise preparation — named sponsor, workflow owners, subject-matter validators, and supporting evidence must be in hand before the clock starts.
 
 It is not an AI maturity score. It is not a strategy roadmap. It is a controlled decision process with a named sponsor, a structured investigation, and a signed record.
 
@@ -15,99 +17,111 @@ It is not an AI maturity score. It is not a strategy roadmap. It is a controlled
 
 ---
 
-## Section 02 — The Correct Content (replaces "Six Review Questions")
+## Section 02 — Replace "Six Review Questions" with "Three Working Sessions"
 
-The page currently shows six questions in section 02. This is outdated. The current investigation model has four sections that must be completed in order. Replace section 02 with the following.
+This section is currently titled "Six Review Questions" and lists six investigation questions. Replace the entire section with the following.
 
-**Section label:** Four-Section Assessment
+**Section label:** Three Working Sessions
 
 **Headline:** Declared Before Decided.
 
-**Lead paragraph:** Each section must be completed before the next begins. The disposition cannot be confirmed until execution classes are declared, authority is assigned, and the enforcement boundary is mapped.
+**Lead paragraph:** Three working sessions completed within ten business days after required evidence is received. The disposition cannot be confirmed until execution classes are declared, authority is assigned, and the enforcement boundary is mapped.
 
-**The four sections:**
+**The three sessions:**
 
-1. **Execution Class Declaration** — Name every action the workflow performs, its target, scope, and the consequence if it acts incorrectly. Each class is validated by a named reviewer before authority can be assigned.
+1. **Register and Classify** — Build the workflow registry. Name owners, record approximate cost, assign initial risk tier, log preliminary disposition, and surface missing evidence. The FDO may identify preliminary KILL candidates. The executive sponsor owns the final decision.
 
-2. **Authority Matrix** — One authority entry per execution class: AUTO, REVIEW, ESCALATE, or DENY. Specifies the holder, the policy basis, the evidence required at runtime, and the DAL-X signal.
+2. **Investigate** — For each Full Review workflow: confirm every consequential execution class, mark each VALIDATED or NOT VALIDATED, assign AUTO / REVIEW / ESCALATE / DENY, identify the enforcement boundary, assess DAL-X suitability, and record blockers. Missing evidence stays open with a named owner. It is never converted into a favorable assumption.
 
-3. **Enforcement Boundary** — Map the execution path and assess DAL-X suitability. Three outcomes: Suitable, Prerequisites Required, or Not Suitable. Each requires a sponsor decision before the investigation closes.
+3. **Decide and Sign** — The executive sponsor reviews the disposition, authority matrix, enforcement boundary, and required next action. The Governance Manifest is signed. A signed manifest with unresolved blockers is signed evidence of the decision — not permission to begin enforcement.
 
-4. **Business Value and Disposition** — Cost, volume, risk, and available alternatives. The evidence here determines the governance finding: Keep, Downsize, Replace, or Kill.
-
-**Footnote:** The same four sections structure every investigation. A section with unresolved items remains open. It is never carried forward as complete.
+**Footnote:** The same structure applies to every engagement. A session with unresolved items remains open. It is never carried forward as complete.
 
 ---
 
-## The Four Verdicts (unchanged — verify these are still accurate on the page)
+## Section 02 — Risk Tier Note (add below the three session items)
 
-| Verdict | Short description |
-|---------|------------------|
-| KEEP | Maps to a real requirement; no simpler mechanism available; retain within approved limits |
-| DOWNSIZE | Real requirement, but scope or discretion exceeds what is needed; restrict to approved reduced scope |
-| REPLACE | Wrong mechanism; revoke authority and validate approved alternative before production responsibility transfers |
-| KILL | Duplicative, unsupported, or no longer tied to an authorized requirement; revoke and decommission |
+Add a short callout block after the three session descriptions:
 
----
+**Label:** Risk-Based Treatment
 
-## The Four Deliverables (unchanged — verify these are still accurate on the page)
-
-1. **Decision Registry** — one row per workflow: decision, reason, owner, status, change condition, tracking reference, next action
-2. **Defense File** — one per workflow: evidence, four-section findings, verdict, sponsor decision, approval date
-3. **Governance Manifest** — for continuing workflows: signed authority specification covering scope, limits, triggers, evidence, escalation, decision rules, version
-4. **Implementation Handoff** — for Replace and Kill: revocation and closure instructions, owners, tracking references, verification responsibility
+**Body:** Not every workflow requires the same depth of investigation. A workflow that cannot change records, trigger decisions, expose sensitive data, or create consequential outcomes — and that requires meaningful human review before its output is used — may qualify for a simplified review. Read-only access alone does not qualify. A read-only workflow that produces output a human uses to deny credit, alter treatment, or terminate employment is consequential. The test is consequence, not access mode.
 
 ---
 
-## The Four-Week Timeline (unchanged — verify these are still accurate on the page)
+## Section 05 — Update "Four-Week Process" to Match Three Sessions
 
-| Week | Phase | Activity |
-|------|-------|----------|
-| 1 | Register and Baseline | Register up to ten workflows. Confirm owners, requirements, mechanisms, costs, downstream systems, authority paths, and available evidence. |
-| 2 | Investigate | Apply Sections 1–3. Declare execution classes, assign authority, map the enforcement boundary. |
-| 3 | Validate | Resolve defects with client specialists, apply Section 4, prepare the decision package and proposed Governance Manifest. |
-| 4 | Sign and Hand Off | Present each decision to the executive sponsor, record acceptance or override, finalize ownership, distribution, implementation conditions, and DAL-X handoff. |
+The timeline section currently describes four weeks. Replace with the following structure:
 
----
+**Section label:** Three Working Sessions
 
-## Authority Levels (new — may be referenced in updated copy)
+**Headline:** Ten Business Days. One Controlled Decision Path.
 
-The authority matrix assigns one of four levels to each execution class:
+**Lead:** The schedule begins when the named sponsor, workflow owners, validators, and required evidence are confirmed. Jochanni Labs cannot compress the timeline until the enterprise side is ready.
 
-| Level | Meaning |
-|-------|---------|
-| AUTO | An approved policy authorizes execution without human review |
-| REVIEW | A named role must review before execution proceeds |
-| ESCALATE | A named authority holder must approve |
-| DENY | Execution is prohibited under all conditions |
+| Session | Name | What happens |
+|---------|------|-------------|
+| Session 1 | Register and Classify | Register all in-scope workflows. Confirm owners, requirements, costs, risk tiers, preliminary dispositions, and missing evidence. |
+| Session 2 | Investigate | Apply Sections 1–3. Declare execution classes, assign authority levels, map enforcement boundaries, record blockers. |
+| Session 3 | Decide and Sign | Present each disposition to the executive sponsor. Record acceptance or override. Sign the Governance Manifest. Finalize ownership, distribution, and DAL-X handoff. |
+
+**Footnote below table:** The ten business day window is a completion commitment, not a scheduling guarantee. It begins on evidence receipt, not on engagement start.
 
 ---
 
-## DAL-X Connection (verify section 06 on the page is still accurate)
+## Section 03 — Four Verdicts (verify, do not change copy)
 
-The DGR produces the signed Governance Manifest. Engineering converts it into runtime enforcement via DAL-X. The manifest is the configuration source — not proof that enforcement is active.
+The four verdict descriptions should remain as currently written. Verify that the page shows:
 
-DGR defines: allow, block, escalate, revoke, or close.
-DAL-X evaluates approved conditions at runtime.
-Engineering proves the execution path.
+- V.01 KEEP — maps to a real requirement, no simpler mechanism, retain within approved limits
+- V.02 DOWNSIZE — real requirement, wrong scope or discretion, restrict to approved reduced scope
+- V.03 REPLACE — wrong mechanism, revoke and validate approved alternative before transfer
+- V.04 KILL — duplicative, unsupported, or no longer tied to an authorized requirement
 
-`enforcementReady` is true only when all of the following hold:
-- Disposition is KEEP or DOWNSIZE
-- All execution classes are VALIDATED
-- Enforcement boundary suitability is SUITABLE
-- Sponsor has signed
-- Any prerequisites are resolved
+Add one sentence below the four verdicts if not already present:
+
+> An override changes the client decision. It does not rewrite the original Jochanni Labs finding. Both remain separate, dated facts.
+
+---
+
+## Section 06 — DAL-X (verify, update one paragraph)
+
+The section correctly states that a signed decision is not runtime enforcement. Add or confirm the following sentence in this section:
+
+> A signed manifest with unresolved blockers is signed evidence of the decision. It is not permission to begin enforcement. enforcementReady is true only when all execution classes are validated, the enforcement boundary is suitable, and the sponsor has signed with no open prerequisites.
+
+---
+
+## Section 04 — Deliverables (verify, update one label)
+
+Change "Decision Registry Portfolio Record" to "Workflow Registry" for consistency with current terminology. All other deliverable descriptions remain correct.
 
 ---
 
 ## Terminology to Use Consistently
 
-| Use this | Not this |
-|----------|----------|
-| Execution class | Task, capability, or action type |
-| Authority matrix | Approval chain or permission set |
-| Enforcement boundary | Integration point or DAL-X connection |
-| Disposition | Outcome, recommendation, or rating |
-| Named executive sponsor | Stakeholder or approver |
-| Governance Manifest | Policy document or configuration file |
-| Defense File | Report or assessment |
+| Use | Not |
+|-----|-----|
+| Three working sessions | Three days / three-day sprint |
+| Ten business days after evidence is received | Four weeks / four-week engagement |
+| Working Session 1, 2, 3 | Week 1, 2, 3, 4 |
+| Execution class | Task, capability, action type |
+| Authority matrix | Approval chain, permission set |
+| Enforcement boundary | Integration point, DAL-X connection |
+| Disposition | Outcome, recommendation, rating |
+| Named executive sponsor | Stakeholder, approver |
+| Governance Manifest | Policy document, configuration file |
+| Defense File | Report, assessment |
+| FDO (Formal Decision Officer) | Analyst, consultant, reviewer |
+| Preliminary disposition | Initial assessment, early finding |
+| Simplified review | Low-risk track, fast track |
+| Full review | Standard track, full assessment |
+
+---
+
+## What Not to Claim
+
+- Do not claim that regulators endorse this specific DGR method.
+- The EU AI Act uses a risk-based framework — this is cited as precedent for the risk tier approach, not as regulatory endorsement of DGR.
+- The FDO does not make final governance decisions. The executive sponsor does. Legal and compliance specialists confirm regulatory conclusions.
+- DAL-X enforcement is not active until `enforcementReady` is true AND engineering has implemented and proved the execution path.

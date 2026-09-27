@@ -9,6 +9,10 @@ version as its runtime enforcement configuration.
 an enforced policy. Enforcement begins only when DAL-X loads a manifest the named sponsor
 has signed. These states must never be conflated.
 
+**Signed ≠ enforcement ready.** A signed manifest with unresolved blockers is signed evidence
+of the decision, not permission to begin enforcement. `enforcementReady` must be `true` before
+DAL-X treats the manifest as an active configuration source.
+
 ---
 
 ## Top-Level Structure
@@ -63,10 +67,11 @@ One entry per registered AI agent in the engagement.
   "registrationStatus": "ACTIVE | SUSPENDED | DECOMMISSIONING | CLOSED",
   "permittedPurpose": "<string>",
   "businessOutcome": "<string>",
+  "riskTier": "SIMPLIFIED | FULL",
   "sponsor": { "<Sponsor>" },
   "disposition": { "<Disposition>" },
   "executionClasses": [ "<ExecutionClass[]>" ],
-  "enforcementBoundary": { "<EnforcementBoundary>" }
+  "enforcementBoundary": { "<EnforcementBoundary | null>" }
 }
 ```
 
@@ -75,6 +80,17 @@ One entry per registered AI agent in the engagement.
   no active enforcement.
 - `permittedPurpose`: The explicit statement of what this agent is authorized to do. DAL-X
   validates execution requests against this boundary.
+- `riskTier`: Assigned during Working Session 1.
+  - `SIMPLIFIED`: The workflow meets all five simplified review criteria. Result is "No
+    consequential execution identified. Full DGR treatment is not required at this time."
+    `executionClasses` will be empty. `enforcementBoundary` will be null.
+  - `FULL`: One or more consequential execution classes must be declared. All four
+    investigation sections are required. Every known consequential execution class must be
+    declared — not only the primary class.
+
+> **Read-only access does not qualify a workflow as SIMPLIFIED.** A read-only agent can
+> produce output that causes a human to deny credit, terminate employment, alter treatment,
+> or make another consequential decision. The test is consequence, not access mode.
 
 ---
 
