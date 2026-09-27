@@ -1,55 +1,92 @@
-import Link from "next/link";
-import { ArrowRight, CheckCircle2, Shield } from "lucide-react";
+"use client";
 
-const VERDICTS = [
+import Link from "next/link";
+import { useEffect, useRef, type ReactNode } from "react";
+import { ArrowRight } from "lucide-react";
+
+function FadeIn({
+  children,
+  className = "",
+  delay = 0,
+}: {
+  children: ReactNode;
+  className?: string;
+  delay?: number;
+}) {
+  const ref = useRef<HTMLDivElement | null>(null);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+
+    node.style.opacity = "0";
+    node.style.transform = "translateY(28px)";
+    node.style.transition = `opacity 0.85s cubic-bezier(0.16,1,0.3,1) ${delay}ms, transform 0.85s cubic-bezier(0.16,1,0.3,1) ${delay}ms`;
+    node.style.willChange = "opacity, transform";
+
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          if (entry.isIntersecting) {
+            node.style.opacity = "1";
+            node.style.transform = "translateY(0)";
+            observer.unobserve(node);
+          }
+        });
+      },
+      { threshold: 0.15 }
+    );
+
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [delay]);
+
+  return (
+    <div ref={ref} className={className}>
+      {children}
+    </div>
+  );
+}
+
+const ACTS = [
   {
-    label: "KEEP",
-    color: "text-emerald-700",
-    bg: "bg-emerald-50 border-emerald-200",
-    description:
-      "Maps to a real requirement. No simpler mechanism available. Retain within the approved authority limits.",
+    n: "01",
+    title: "We investigate",
+    body: "Four sections per workflow. Evidence determines the proposed decision. Not assumption. Not pressure.",
   },
   {
-    label: "DOWNSIZE",
-    color: "text-amber-700",
-    bg: "bg-amber-50 border-amber-200",
-    description:
-      "Real requirement — wrong scope or discretion. Restrict execution to the approved reduced scope.",
+    n: "02",
+    title: "The sponsor decides",
+    body: "The named executive accepts the finding or records a departure. No signed authority means no enforcement.",
   },
   {
-    label: "REPLACE",
-    color: "text-orange-700",
-    bg: "bg-orange-50 border-orange-200",
-    description:
-      "Wrong mechanism. Revoke authority and validate the approved alternative before production responsibility transfers.",
+    n: "03",
+    title: "DAL-X enforces",
+    body: "The signed Governance Manifest becomes runtime policy. Not when it is signed. When enforcementReady is true.",
   },
-  {
-    label: "KILL",
-    color: "text-red-700",
-    bg: "bg-red-50 border-red-200",
-    description:
-      "Duplicative, unsupported, or no longer tied to an authorized requirement. Revoke and decommission.",
-  },
+];
+
+const STAKES = [
+  "Workflows accumulate faster than accountability.",
+  "The team that built it cannot objectively evaluate it.",
+  "Without a signed authority chain, there is nothing to enforce.",
 ];
 
 const SESSIONS = [
   {
-    label: "Session 1",
+    label: "SESSION 1",
     title: "Register and Classify",
-    description:
-      "Build the workflow registry. Confirm owners, approximate cost, initial risk tier, preliminary disposition, and missing evidence. The FDO may identify preliminary KILL candidates. The executive sponsor owns every final decision.",
+    body: "Build the workflow registry. Name every owner. Record approximate cost. Assign the initial risk tier and preliminary disposition. Surface missing evidence and log who owns each open item. The FDO may flag preliminary kill candidates. The executive sponsor owns every final decision.",
   },
   {
-    label: "Session 2",
+    label: "SESSION 2",
     title: "Investigate",
-    description:
-      "Confirm every consequential execution class, mark each VALIDATED or NOT VALIDATED, assign AUTO / REVIEW / ESCALATE / DENY, identify the enforcement boundary, assess DAL-X suitability, and record blockers. Missing evidence stays open with a named owner. It is never converted into a favorable assumption.",
+    body: "Confirm every consequential execution class and mark each one validated or not. Assign the authority level: AUTO, REVIEW, ESCALATE, or DENY. Identify the enforcement boundary and assess DAL-X suitability. Record every blocker with a named owner. Missing evidence stays open. It is never converted into a favorable assumption.",
   },
   {
-    label: "Session 3",
+    label: "SESSION 3",
     title: "Decide and Sign",
-    description:
-      "The executive sponsor reviews each disposition, authority matrix, enforcement boundary, and required next action. The Governance Manifest is signed as the approved governance record. A signed manifest with unresolved blockers is signed evidence of the decision — not permission to begin enforcement.",
+    body: "The executive sponsor reviews each disposition, authority matrix, enforcement boundary, and required next action. The Governance Manifest is signed as the approved governance record. A signed manifest with unresolved blockers is signed evidence of the decision. It is not permission to begin enforcement.",
   },
 ];
 
@@ -57,271 +94,415 @@ const SECTIONS = [
   {
     num: "S1",
     title: "Execution Class Declaration",
-    text: "Every action the workflow performs is named — what it does, where it reaches, what breaks if it acts incorrectly. Each class is validated by a named reviewer before authority can be assigned.",
+    body: "Every action the workflow performs is named: what it does, where it reaches, what breaks if it acts incorrectly. Each class is validated by a named reviewer before authority can be assigned.",
   },
   {
     num: "S2",
     title: "Authority Matrix",
-    text: "One authority entry per execution class: AUTO, REVIEW, ESCALATE, or DENY. Specifies the holder, policy basis, evidence required at runtime, and the DAL-X signal.",
+    body: "One entry per execution class. AUTO, REVIEW, ESCALATE, or DENY. The holder, the policy basis, the evidence required at runtime, and the DAL-X signal.",
   },
   {
     num: "S3",
     title: "Enforcement Boundary",
-    text: "The execution path is mapped and DAL-X suitability is assessed. Three outcomes: Suitable, Prerequisites Required, or Not Suitable. Each requires a sponsor decision before the investigation closes.",
+    body: "The execution path is mapped. DAL-X suitability is assessed: Suitable, Prerequisites Required, or Not Suitable. Each outcome requires a sponsor decision before the investigation closes.",
   },
   {
     num: "S4",
     title: "Business Value and Disposition",
-    text: "Cost, volume, risk, and available alternatives. The evidence across all four sections determines the governance finding: Keep, Downsize, Replace, or Kill.",
+    body: "Cost, volume, risk, and available alternatives. The evidence across all four sections determines the finding: Keep, Downsize, Replace, or Kill.",
   },
+];
+
+const VERDICTS = [
+  {
+    label: "KEEP",
+    bar: "bg-emerald-500",
+    ghost: "text-emerald-500",
+    tag: "text-emerald-400",
+    headline: "Maps to a real requirement. No simpler mechanism available.",
+    body: "Retain within the approved authority limits. Keep and Downsize both require a signed Governance Manifest before continued execution is authorized.",
+  },
+  {
+    label: "DOWNSIZE",
+    bar: "bg-amber-500",
+    ghost: "text-amber-500",
+    tag: "text-amber-400",
+    headline: "The requirement is real. The scope is wrong.",
+    body: "Restrict execution to the approved reduced scope. The current mechanism uses more capacity or discretion than the requirement justifies.",
+  },
+  {
+    label: "REPLACE",
+    bar: "bg-orange-500",
+    ghost: "text-orange-500",
+    tag: "text-orange-400",
+    headline: "Wrong mechanism for the requirement.",
+    body: "Revoke authority from the current workflow. The approved alternative becomes the authorized execution path once it is implemented and validated.",
+  },
+  {
+    label: "KILL",
+    bar: "bg-red-600",
+    ghost: "text-red-600",
+    tag: "text-red-400",
+    headline: "No authorized requirement. No viable path.",
+    body: "Revoke all execution authority. The workflow remains blocked until decommissioning is confirmed and registration is formally closed.",
+  },
+];
+
+const DELIVERABLES = [
+  "Workflow Registry. Every workflow documented with owner, cost, risk tier, and preliminary disposition.",
+  "Defense Files. One per workflow with four-section findings, verdict, sponsor decision, and approval date.",
+  "Governance Manifest. The signed authority specification and machine-readable DAL-X configuration.",
+  "Implementation Handoff. For Replace and Kill: revocation instructions, named owners, and verification responsibility.",
+  "Missing Evidence Log. Every open item carried forward with a named owner until resolved.",
+  "60-day checkpoint. Confirmation that required actions were carried out.",
 ];
 
 export default function HomePage() {
   return (
-    <div className="min-h-screen bg-white text-zinc-900 font-sans">
+    <div className="min-h-screen bg-zinc-950 text-zinc-100 font-sans antialiased">
       {/* Nav */}
-      <nav className="border-b px-6 py-4 flex items-center justify-between max-w-5xl mx-auto">
-        <div>
-          <p className="text-[10px] font-medium uppercase tracking-widest text-zinc-400">Jochanni Labs</p>
-          <p className="text-sm font-semibold leading-tight">Decision Governance Review</p>
-        </div>
-        <div className="flex items-center gap-4">
-          <Link href="/sign-in" className="text-sm text-zinc-500 hover:text-zinc-900 transition-colors">
-            Sign in
-          </Link>
-          <Link
-            href="/inquiry"
-            className="text-sm bg-zinc-900 text-white px-4 py-2 rounded-lg hover:bg-zinc-700 transition-colors"
-          >
-            Start an inquiry →
-          </Link>
+      <nav className="sticky top-0 z-50 bg-zinc-950/80 backdrop-blur border-b border-zinc-900">
+        <div className="max-w-6xl mx-auto px-6 py-4 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-zinc-500">
+              Jochanni Labs
+            </p>
+            <p className="text-sm font-semibold text-zinc-100 mt-0.5">
+              Decision Governance Review
+            </p>
+          </div>
+          <div className="flex items-center gap-6">
+            <Link
+              href="/sign-in"
+              className="text-sm text-zinc-500 hover:text-zinc-200 transition-colors"
+            >
+              Sign in
+            </Link>
+            <Link
+              href="/inquiry"
+              className="bg-amber-600 text-zinc-950 font-bold text-sm px-5 py-2.5 hover:bg-amber-500 transition-colors"
+            >
+              Start an inquiry
+            </Link>
+          </div>
         </div>
       </nav>
 
       {/* Hero */}
-      <section className="max-w-3xl mx-auto px-6 pt-20 pb-16 text-center">
-        <p className="text-xs font-medium uppercase tracking-widest text-zinc-400 mb-4">
-          Three working sessions · Ten business days · DAL-X enforced
-        </p>
-        <h1 className="text-4xl sm:text-5xl font-semibold leading-tight tracking-tight">
-          Do your AI workflows operate under governance authority?
-        </h1>
-        <p className="mt-6 text-lg text-zinc-500 leading-relaxed max-w-2xl mx-auto">
-          The Decision Governance Review produces one evidence-supported decision per workflow —
-          Keep, Downsize, Replace, or Kill — and the signed authority requirements governing any
-          continued execution. Three working sessions completed within ten business days after
-          required evidence is received.
-        </p>
-        <div className="mt-8 flex flex-col sm:flex-row gap-3 justify-center">
-          <Link
-            href="/inquiry"
-            className="inline-flex items-center justify-center gap-2 bg-zinc-900 text-white px-6 py-3 rounded-lg text-sm font-medium hover:bg-zinc-700 transition-colors"
-          >
-            Start an inquiry
-            <ArrowRight className="w-4 h-4" />
-          </Link>
-          <a
-            href="#how-it-works"
-            className="inline-flex items-center justify-center gap-2 border border-zinc-200 px-6 py-3 rounded-lg text-sm font-medium hover:bg-zinc-50 transition-colors"
-          >
-            How it works
-          </a>
+      <section className="relative min-h-screen bg-zinc-950 flex items-center overflow-hidden">
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{
+            backgroundImage:
+              "linear-gradient(rgba(255,255,255,0.03) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.03) 1px, transparent 1px)",
+            backgroundSize: "72px 72px",
+          }}
+        />
+        <div className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] rounded-full bg-amber-600/8 blur-[160px] pointer-events-none" />
+
+        <div className="relative max-w-6xl mx-auto px-6 py-32 w-full">
+          <FadeIn>
+            <div className="flex items-center gap-4 mb-10">
+              <span className="font-mono tracking-[0.3em] text-zinc-600 text-[10px] uppercase">
+                Jochanni Labs
+              </span>
+              <span className="h-px w-10 bg-amber-600/40" />
+              <span className="font-mono tracking-[0.3em] text-zinc-600 text-[10px] uppercase">
+                Decision Governance Review
+              </span>
+            </div>
+          </FadeIn>
+
+          <FadeIn>
+            <h1 className="text-5xl sm:text-7xl lg:text-[88px] font-black leading-[0.92] tracking-tight max-w-5xl">
+              <span className="block text-zinc-100">Who authorized</span>
+              <span className="block text-zinc-500">your AI workflows?</span>
+            </h1>
+          </FadeIn>
+
+          <FadeIn delay={200}>
+            <p className="text-zinc-400 text-lg max-w-xl leading-relaxed mt-8">
+              One decision per workflow. Keep it, downsize it, replace it, or end it.
+              Signed by a named executive. Enforceable by DAL-X.
+            </p>
+          </FadeIn>
+
+          <FadeIn delay={380}>
+            <div className="mt-12 flex flex-col sm:flex-row gap-4">
+              <Link
+                href="/inquiry"
+                className="inline-flex items-center justify-center gap-2 bg-amber-600 text-zinc-950 font-bold text-sm px-8 py-4 tracking-wide hover:bg-amber-500 transition-colors"
+              >
+                Start an inquiry
+                <ArrowRight className="w-4 h-4" />
+              </Link>
+              <a
+                href="#how-it-works"
+                className="inline-flex items-center justify-center gap-2 border border-zinc-800 text-zinc-300 font-medium text-sm px-8 py-4 tracking-wide hover:bg-zinc-900 hover:border-zinc-700 transition-colors"
+              >
+                How it works
+              </a>
+            </div>
+          </FadeIn>
         </div>
       </section>
 
-      {/* Three-act principle */}
-      <section className="border-y bg-zinc-950 text-zinc-100">
-        <div className="max-w-3xl mx-auto px-6 py-12">
-          <p className="text-xs font-medium uppercase tracking-widest text-zinc-400 mb-6">
-            Three-act governance
-          </p>
-          <div className="grid sm:grid-cols-3 gap-6 text-sm">
-            <div className="space-y-2">
-              <span className="text-[10px] font-mono text-zinc-500">ACT 1</span>
-              <p className="font-semibold text-zinc-100">Jochanni Labs assesses</p>
-              <p className="text-zinc-400 leading-relaxed">
-                Four investigation sections per workflow. Evidence determines the proposed
-                disposition — not assumption.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <span className="text-[10px] font-mono text-zinc-500">ACT 2</span>
-              <p className="font-semibold text-zinc-100">Sponsor authorizes</p>
-              <p className="text-zinc-400 leading-relaxed">
-                The named executive sponsor accepts the disposition or records a stated departure.
-                No authority, no enforcement.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <span className="text-[10px] font-mono text-zinc-500">ACT 3</span>
-              <p className="font-semibold text-zinc-100">DAL-X enforces</p>
-              <p className="text-zinc-400 leading-relaxed">
-                The signed Governance Manifest becomes the runtime policy when enforcementReady
-                is true. DAL-X intercepts, escalates, and audits against it.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Problem statement */}
-      <section className="bg-zinc-50 border-y">
-        <div className="max-w-3xl mx-auto px-6 py-16">
-          <p className="text-xs font-medium uppercase tracking-widest text-zinc-400 mb-6">
-            The problem
-          </p>
-          <div className="grid sm:grid-cols-3 gap-6 text-sm">
-            <div className="space-y-2">
-              <p className="font-semibold">AI workflows accumulate faster than governance.</p>
-              <p className="text-zinc-500 leading-relaxed">
-                Most organizations deploy AI workflows before establishing who authorized them,
-                what they are permitted to do, and who is accountable if they act incorrectly.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <p className="font-semibold">Internal review is not independent.</p>
-              <p className="text-zinc-500 leading-relaxed">
-                Teams that built the workflow are rarely positioned to evaluate whether it
-                still earns its authority. Sunk cost reasoning and organizational pressure dominate.
-              </p>
-            </div>
-            <div className="space-y-2">
-              <p className="font-semibold">Enforcement requires authority.</p>
-              <p className="text-zinc-500 leading-relaxed">
-                A governance decision without a signed authority chain cannot be enforced.
-                DAL-X requires a signed manifest with enforcementReady true before runtime
-                interception activates.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* How it works */}
-      <section id="how-it-works" className="max-w-3xl mx-auto px-6 py-16">
-        <p className="text-xs font-medium uppercase tracking-widest text-zinc-400 mb-2">
-          How it works
-        </p>
-        <h2 className="text-2xl font-semibold mb-2">Three working sessions. One decision per workflow.</h2>
-        <p className="text-sm text-zinc-500 mb-10 leading-relaxed">
-          The ten business day window begins when the named sponsor, workflow owners, validators,
-          and required evidence are confirmed.
-        </p>
-        <div className="space-y-6">
-          {SESSIONS.map((s, i) => (
-            <div key={i} className="flex gap-5">
-              <div className="flex-shrink-0 w-20 pt-0.5">
-                <p className="text-[10px] font-medium uppercase tracking-widest text-zinc-400">{s.label}</p>
-                <p className="text-xs font-semibold mt-0.5">{s.title}</p>
+      {/* Three-act strip */}
+      <section className="bg-zinc-900 border-y border-zinc-800">
+        <FadeIn>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-px bg-zinc-800">
+            {ACTS.map((act) => (
+              <div key={act.n} className="bg-zinc-900 p-10">
+                <p className="text-7xl font-black text-amber-600/15 leading-none">
+                  {act.n}
+                </p>
+                <p className="text-lg font-semibold text-zinc-100 mt-3">
+                  {act.title}
+                </p>
+                <p className="text-sm text-zinc-500 mt-2 leading-relaxed max-w-xs">
+                  {act.body}
+                </p>
               </div>
-              <div className="flex-1 border-l pl-5 pb-6">
-                <p className="text-sm text-zinc-600 leading-relaxed">{s.description}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        </FadeIn>
       </section>
 
-      {/* Four sections */}
-      <section className="bg-zinc-50 border-y">
-        <div className="max-w-3xl mx-auto px-6 py-16">
-          <p className="text-xs font-medium uppercase tracking-widest text-zinc-400 mb-2">
-            The investigation
-          </p>
-          <h2 className="text-2xl font-semibold mb-2">Four sections. Completed in order.</h2>
-          <p className="text-sm text-zinc-500 mb-8 leading-relaxed">
-            The disposition in Section 4 cannot be confirmed until Sections 1–3 are complete.
-            A section with unresolved items remains open — it is never carried forward as complete.
-          </p>
-          <div className="grid sm:grid-cols-2 gap-3">
-            {SECTIONS.map((s) => (
-              <div key={s.num} className="flex gap-3 items-start border rounded-lg bg-white px-4 py-4">
-                <span className="text-xs font-mono text-zinc-400 mt-0.5 flex-shrink-0">{s.num}</span>
-                <div>
-                  <p className="text-sm font-semibold text-zinc-800">{s.title}</p>
-                  <p className="text-sm text-zinc-500 mt-1 leading-relaxed">{s.text}</p>
+      {/* The stakes */}
+      <section className="bg-black py-32">
+        <div className="max-w-6xl mx-auto px-6">
+          <FadeIn>
+            <p className="font-mono text-[10px] tracking-[0.3em] text-amber-600/60 uppercase mb-16">
+              Why this exists
+            </p>
+          </FadeIn>
+          <div>
+            {STAKES.map((stake, i) => (
+              <FadeIn key={i} delay={i * 120}>
+                <div className="border-t border-zinc-900 py-12 flex gap-8 items-baseline">
+                  <span className="text-xs font-mono text-zinc-700 flex-shrink-0">
+                    0{i + 1}
+                  </span>
+                  <p className="text-3xl sm:text-4xl lg:text-5xl font-semibold text-zinc-200 leading-tight tracking-tight max-w-3xl">
+                    {stake}
+                  </p>
                 </div>
-              </div>
+              </FadeIn>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Four verdicts */}
-      <section className="max-w-3xl mx-auto px-6 py-16">
-        <div className="flex items-center gap-2 mb-2">
-          <p className="text-xs font-medium uppercase tracking-widest text-zinc-400">The decisions</p>
-        </div>
-        <div className="flex items-center gap-2 mb-8">
-          <h2 className="text-2xl font-semibold">Four decisions. Each with a required response.</h2>
-          <Shield className="w-5 h-5 text-zinc-400" />
-        </div>
-        <div className="grid sm:grid-cols-2 gap-4">
-          {VERDICTS.map((v) => (
-            <div key={v.label} className={`border rounded-lg px-5 py-4 ${v.bg}`}>
-              <p className={`text-sm font-bold tracking-wider ${v.color}`}>{v.label}</p>
-              <p className="text-sm text-zinc-600 mt-1 leading-relaxed">{v.description}</p>
+      {/* Three working sessions */}
+      <section id="how-it-works" className="bg-zinc-950 py-32">
+        <div className="max-w-6xl mx-auto px-6">
+          <FadeIn>
+            <p className="font-mono text-[10px] tracking-[0.3em] text-amber-600/60 uppercase">
+              The process
+            </p>
+            <h2 className="text-4xl sm:text-5xl font-bold text-zinc-100 tracking-tight mt-3">
+              Three sessions. Ten business days.
+            </h2>
+            <p className="text-zinc-600 text-sm mt-4 max-w-lg leading-relaxed">
+              The clock starts when the named sponsor, workflow owners, validators,
+              and supporting evidence are confirmed. Not before.
+            </p>
+          </FadeIn>
+
+          <div className="relative mt-20">
+            <div className="absolute left-[11px] top-6 bottom-6 w-px bg-gradient-to-b from-amber-600/60 via-amber-600/20 to-transparent" />
+            <div className="space-y-16">
+              {SESSIONS.map((s, i) => (
+                <FadeIn key={s.label} delay={i * 140}>
+                  <div className="flex gap-10 items-start">
+                    <div className="w-[22px] h-[22px] rounded-full bg-amber-600/20 border border-amber-600/50 flex items-center justify-center flex-shrink-0 relative z-10">
+                      <span className="w-2 h-2 bg-amber-600 rounded-full" />
+                    </div>
+                    <div>
+                      <p className="font-mono text-[10px] text-amber-600/60 tracking-[0.2em] uppercase">
+                        {s.label}
+                      </p>
+                      <p className="text-xl font-semibold text-zinc-100 mt-1">
+                        {s.title}
+                      </p>
+                      <p className="text-sm text-zinc-500 leading-relaxed mt-3 max-w-2xl">
+                        {s.body}
+                      </p>
+                    </div>
+                  </div>
+                </FadeIn>
+              ))}
             </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Four investigation sections */}
+      <section className="bg-zinc-900 border-y border-zinc-800 py-32">
+        <div className="max-w-6xl mx-auto px-6">
+          <FadeIn>
+            <p className="font-mono text-[10px] tracking-[0.3em] text-amber-600/60 uppercase">
+              The investigation
+            </p>
+            <h2 className="text-4xl sm:text-5xl font-bold text-zinc-100 tracking-tight mt-3">
+              Four sections. Each one gates the next.
+            </h2>
+            <p className="text-zinc-500 text-sm mt-4 max-w-lg leading-relaxed">
+              The disposition cannot be confirmed until Sections 1 through 3 are complete.
+            </p>
+          </FadeIn>
+
+          <FadeIn>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-px bg-zinc-800 mt-16">
+              {SECTIONS.map((s) => (
+                <div key={s.num} className="bg-zinc-900 p-10">
+                  <p className="text-5xl font-black text-zinc-700 leading-none">
+                    {s.num}
+                  </p>
+                  <p className="text-lg font-semibold text-zinc-100 mt-4">
+                    {s.title}
+                  </p>
+                  <p className="text-sm text-zinc-500 leading-relaxed mt-3">
+                    {s.body}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </FadeIn>
+        </div>
+      </section>
+
+      {/* The four decisions */}
+      <section className="bg-black py-0">
+        <div className="max-w-5xl mx-auto px-6 py-24">
+          <FadeIn>
+            <p className="font-mono text-[10px] tracking-[0.3em] text-amber-600/60 uppercase">
+              The decisions
+            </p>
+            <h2 className="text-4xl sm:text-5xl font-bold text-zinc-100 tracking-tight mt-3">
+              Four decisions. Each with a required response.
+            </h2>
+            <p className="text-zinc-500 text-sm mt-4 max-w-2xl leading-relaxed">
+              An override changes the client decision. It does not rewrite the original
+              Jochanni Labs finding. Both remain separate, dated facts.
+            </p>
+          </FadeIn>
+        </div>
+
+        <div>
+          {VERDICTS.map((v, i) => (
+            <FadeIn key={v.label}>
+              <div
+                className={`relative bg-black ${
+                  i === 0 ? "border-t border-zinc-900" : ""
+                } border-b border-zinc-900`}
+              >
+                <div className={`absolute left-0 top-0 bottom-0 w-1 ${v.bar}`} />
+                <div className="max-w-5xl mx-auto px-6 py-14 pl-12 flex items-center gap-8 sm:gap-16">
+                  <div
+                    className={`text-[80px] sm:text-[120px] font-black leading-none tracking-tight opacity-10 ${v.ghost} hidden sm:block`}
+                  >
+                    {v.label}
+                  </div>
+                  <div>
+                    <p
+                      className={`text-xs font-mono tracking-[0.3em] uppercase ${v.tag}`}
+                    >
+                      {v.label}
+                    </p>
+                    <p className="text-2xl font-semibold text-zinc-100 mt-2">
+                      {v.headline}
+                    </p>
+                    <p className="text-sm text-zinc-400 leading-relaxed mt-3 max-w-xl">
+                      {v.body}
+                    </p>
+                  </div>
+                </div>
+              </div>
+            </FadeIn>
           ))}
         </div>
-        <p className="mt-6 text-sm text-zinc-500 leading-relaxed">
-          An override changes the client decision. It does not rewrite the original Jochanni Labs
-          finding. Both remain separate, dated facts.
-        </p>
       </section>
 
       {/* Deliverables */}
-      <section className="bg-zinc-50 border-y">
-        <div className="max-w-3xl mx-auto px-6 py-16">
-          <p className="text-xs font-medium uppercase tracking-widest text-zinc-400 mb-2">
-            Deliverables
-          </p>
-          <h2 className="text-2xl font-semibold mb-8">What you receive.</h2>
-          <div className="grid sm:grid-cols-2 gap-4 text-sm">
-            {[
-              "Workflow Registry — every workflow documented with owner, cost, risk tier, and preliminary disposition",
-              "Defense Files — one per workflow: four-section findings, verdict, sponsor decision, and approval date",
-              "Governance Manifest — signed authority specification and machine-readable DAL-X configuration",
-              "Implementation Handoff — for Replace and Kill: revocation and closure instructions with named owners",
-              "Missing Evidence Log — open items with named owners, carried forward until resolved",
-              "60-day checkpoint — follow-up confirming whether required actions were carried out",
-            ].map((item, i) => (
-              <div key={i} className="flex items-start gap-2.5">
-                <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0 mt-0.5" />
-                <p className="text-zinc-600 leading-relaxed">{item}</p>
-              </div>
-            ))}
-          </div>
+      <section className="bg-zinc-950 py-32">
+        <div className="max-w-6xl mx-auto px-6">
+          <FadeIn>
+            <p className="font-mono text-[10px] tracking-[0.3em] text-amber-600/60 uppercase">
+              What you receive
+            </p>
+            <h2 className="text-3xl sm:text-4xl font-bold text-zinc-100 tracking-tight mt-3 max-w-3xl">
+              The record that survives the conversation.
+            </h2>
+          </FadeIn>
+
+          <FadeIn delay={120}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-6 mt-16 max-w-4xl">
+              {DELIVERABLES.map((item, i) => (
+                <div key={i} className="flex items-start gap-4">
+                  <span className="w-1.5 h-1.5 rounded-full bg-amber-600 mt-2 flex-shrink-0" />
+                  <p className="text-sm text-zinc-400 leading-relaxed">{item}</p>
+                </div>
+              ))}
+            </div>
+          </FadeIn>
         </div>
       </section>
 
       {/* CTA */}
-      <section className="max-w-3xl mx-auto px-6 py-20 text-center">
-        <h2 className="text-2xl font-semibold">Ready to govern your AI workflows?</h2>
-        <p className="mt-3 text-zinc-500 text-sm leading-relaxed">
-          Three working sessions. Ten business days after evidence is received.
-          Conducted under mutual NDA. Response within one business day.
-        </p>
-        <Link
-          href="/inquiry"
-          className="inline-flex items-center gap-2 mt-6 bg-zinc-900 text-white px-7 py-3 rounded-lg text-sm font-medium hover:bg-zinc-700 transition-colors"
-        >
-          Start an inquiry
-          <ArrowRight className="w-4 h-4" />
-        </Link>
+      <section className="bg-black py-40 text-center">
+        <div className="max-w-3xl mx-auto px-6">
+          <FadeIn>
+            <p className="font-mono text-[10px] tracking-[0.3em] text-zinc-600 uppercase">
+              Ready
+            </p>
+            <h2 className="text-4xl sm:text-6xl lg:text-7xl font-black tracking-tight leading-[0.95] mt-6">
+              <span className="block text-zinc-100">No validated authority,</span>
+              <span className="block text-amber-500">no execution.</span>
+            </h2>
+            <p className="text-zinc-500 text-sm mt-8 max-w-sm mx-auto leading-relaxed">
+              Three working sessions. Ten business days after evidence is received.
+              Conducted under mutual NDA.
+            </p>
+            <Link
+              href="/inquiry"
+              className="inline-flex items-center justify-center gap-2 mt-10 bg-amber-600 text-zinc-950 font-bold px-10 py-5 text-sm tracking-wide hover:bg-amber-500 transition-colors"
+            >
+              Start an inquiry
+              <ArrowRight className="w-4 h-4" />
+            </Link>
+          </FadeIn>
+        </div>
       </section>
 
       {/* Footer */}
-      <footer className="border-t px-6 py-8">
-        <div className="max-w-3xl mx-auto flex items-center justify-between flex-wrap gap-4 text-xs text-zinc-400">
+      <footer className="bg-zinc-950 border-t border-zinc-900">
+        <div className="max-w-5xl mx-auto px-6 py-12 flex justify-between flex-wrap gap-6">
           <div>
-            <p className="font-medium text-zinc-600">Jochanni Labs</p>
-            <p className="mt-0.5">Decision Governance Practice</p>
+            <p className="text-zinc-400 font-medium">Jochanni Labs</p>
+            <p className="text-zinc-600 text-xs mt-1">
+              Decision Governance Practice
+            </p>
           </div>
-          <div className="flex gap-6">
-            <Link href="/inquiry" className="hover:text-zinc-600 transition-colors">Start a review</Link>
-            <Link href="/sign-in" className="hover:text-zinc-600 transition-colors">Analyst sign in</Link>
-            <Link href="/portal" className="hover:text-zinc-600 transition-colors">Client portal</Link>
+          <div className="flex gap-8 items-center">
+            <Link
+              href="/inquiry"
+              className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+            >
+              Start a review
+            </Link>
+            <Link
+              href="/sign-in"
+              className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+            >
+              Analyst sign in
+            </Link>
+            <Link
+              href="/portal"
+              className="text-xs text-zinc-600 hover:text-zinc-400 transition-colors"
+            >
+              Client portal
+            </Link>
           </div>
         </div>
       </footer>
