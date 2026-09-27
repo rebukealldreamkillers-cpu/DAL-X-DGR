@@ -1,86 +1,83 @@
 import { db } from "@/db";
 import { engagements, registeredAgents, governanceManifests } from "@/db/schema";
 import { eq, isNull, desc, and } from "drizzle-orm";
-import type { RiskEntry } from "@/db/schema";
+import { checkEnforcementReadiness } from "@/lib/investigations";
 
-// ── Manifest JSON Types ───────────────────────────────────────────────────────
+// ── Manifest JSON Types (v3.0) ────────────────────────────────────────────────
+
+export type ManifestAuthorityEntry = {
+  level: string;
+  role: string;
+  basis: string | null;
+  holderName: string | null;
+  holderTitle: string | null;
+  evidenceRequirement: string;
+  runtimeSignal: string;
+};
+
+export type ManifestExecutionClass = {
+  id: string;
+  action: string;
+  target: string;
+  scope: string;
+  consequenceRationale: string;
+  validationStatus: string;
+  validatedBy: string | null;
+  validationEvidence: string | null;
+  validationDate: string | null;
+  authority: ManifestAuthorityEntry | null;
+};
+
+export type ManifestEnforcementBoundary = {
+  executionPath: string;
+  bypassPaths: string | null;
+  requiredBoundary: string;
+  dalxSuitability: string;
+  integrationPoint: string;
+  requiredExecutionInfo: string | null;
+  downstreamValidationPoint: string;
+  blocker: string | null;
+  sponsorDecision: string | null;
+};
 
 export type ManifestAgentEntry = {
   agentId: string;
+  investigationId: string | null;
   name: string;
+  registrationStatus: string;
   permittedPurpose: string;
   businessOutcome: string;
-  registrationStatus: string;
-  authorityChain: {
-    sponsorName: string | null;
-    sponsorTitle: string | null;
-    sponsorEmail: string | null;
-    authorizedAt: string | null;
-  };
-  costBoundaries: {
-    costPerCallUsd: number | null;
-    monthlyCallVolume: number | null;
-    monthlyTotalUsd: number | null;
-    annualTotalUsd: number | null;
-    interceptionThresholdUsd: number | null;
-    escalationThresholdUsd: number | null;
-  };
-  evidenceStandard: {
-    type: string | null;
-    strength: string | null;
-    description: string | null;
-    activationThreshold: string | null;
-    expansionConditions: string | null;
-  };
-  alternativeMechanism: {
-    type: string | null;
-    description: string | null;
-    estimatedCostPerCallUsd: number | null;
-    feasibility: string | null;
-    migrationConditions: string | null;
-    clientImplementationRequired: boolean;
-  } | null;
-  riskConditions: Array<{
-    id: string;
-    description: string;
-    category: string;
-    severity: string;
-    outputConditions: string;
-    escalationTrigger: string;
-    requiredReviewerName: string;
-    requiredReviewerTitle: string;
-    prohibitedExecutionConditions: string | null;
-  }>;
-  governancePosture: {
-    posture: string;
-    dalxEnforcementPosture: string;
-    reason: string;
-    evidenceSummary: string | null;
-    conditionForChange: string;
-    estimatedAnnualSavingsUsd: number | null;
-    lockStatus: string;
-    lockedAt: string | null;
-  } | null;
+  // Section 4
+  disposition: string | null;
+  dispositionReasoning: string | null;
+  costPerCallUsd: number | null;
+  monthlyVolume: number | null;
+  riskNote: string | null;
+  alternativeNote: string | null;
+  // Section 2
+  defaultExecutionRule: "DENY";
+  executionClasses: ManifestExecutionClass[];
+  // Section 3
+  enforcementBoundary: ManifestEnforcementBoundary | null;
+  // Readiness
+  enforcementReady: boolean;
+  enforcementReadyBlockers: string[];
   investigationCompletedAt: string | null;
 };
 
 export type ManifestJson = {
-  manifestVersion: "2.0";
+  manifestVersion: "3.0";
   manifestStatus: "PROPOSED" | "SIGNED" | "SUPERSEDED";
   engagementId: string;
   companyName: string;
   generatedAt: string;
   signedAt: string | null;
-  signedBy: {
-    name: string;
-    title: string;
-    email: string;
-  } | null;
+  signedBy: { name: string; title: string; email: string } | null;
+  enforcementReady: boolean;
   summary: {
     totalAgents: number;
-    postureBreakdown: Record<string, number>;
-    totalLockedPostures: number;
-    estimatedAnnualSavingsUsd: number;
+    dispositionBreakdown: Record<string, number>;
+    enforcementReadyCount: number;
   };
   agents: ManifestAgentEntry[];
 };
@@ -95,8 +92,15 @@ export async function generateManifest(engagementId: string) {
         where: isNull(registeredAgents.deletedAt),
         orderBy: [registeredAgents.sortOrder],
         with: {
-          investigation: true,
-          governancePosture: true,
+          investigation: {
+            with: {
+              executionClasses: {
+                with: { authority: true },
+                orderBy: (fields, { asc }) => [asc(fields.createdAt)],
+              },
+              enforcementBoundary: true,
+            },
+          },
         },
       },
       governanceManifests: {
@@ -107,7 +111,6 @@ export async function generateManifest(engagementId: string) {
 
   if (!engagement) throw new Error("Engagement not found");
 
-  // Supersede any current SIGNED manifest
   const currentSigned = engagement.governanceManifests.find(
     (m) => m.manifestStatus === "SIGNED",
   );
@@ -118,124 +121,103 @@ export async function generateManifest(engagementId: string) {
       .where(eq(governanceManifests.id, currentSigned.id));
   }
 
-  const postureBreakdown: Record<string, number> = {
+  const dispositionBreakdown: Record<string, number> = {
     KEEP: 0,
     DOWNSIZE: 0,
     REPLACE: 0,
     KILL: 0,
   };
-  let totalSavings = 0;
-  let lockedCount = 0;
+  let enforcementReadyCount = 0;
 
-  const agentEntries: ManifestAgentEntry[] = engagement.registeredAgents.map((agent) => {
-    const inv = agent.investigation;
-    const posture = agent.governancePosture;
+  const agentEntries: ManifestAgentEntry[] = await Promise.all(
+    engagement.registeredAgents.map(async (agent) => {
+      const inv = agent.investigation;
 
-    if (posture) {
-      postureBreakdown[posture.posture] = (postureBreakdown[posture.posture] ?? 0) + 1;
-      if (posture.estimatedAnnualSavingsUsd) {
-        totalSavings += parseFloat(posture.estimatedAnnualSavingsUsd);
+      if (inv?.disposition) {
+        dispositionBreakdown[inv.disposition] =
+          (dispositionBreakdown[inv.disposition] ?? 0) + 1;
       }
-      if (posture.lockedAt) lockedCount++;
-    }
 
-    const costPerCall = agent.costPerCallUsd ? parseFloat(agent.costPerCallUsd) : null;
-    const monthlyTotal =
-      costPerCall && agent.monthlyCallVolume ? costPerCall * agent.monthlyCallVolume : null;
-
-    const risks = ((inv?.q5Risks ?? []) as RiskEntry[]).map((r) => ({
-      id: r.id,
-      description: r.description,
-      category: r.category,
-      severity: r.severity,
-      outputConditions: r.outputConditions,
-      escalationTrigger: r.escalationTrigger,
-      requiredReviewerName: r.requiredReviewerName,
-      requiredReviewerTitle: r.requiredReviewerTitle,
-      prohibitedExecutionConditions: r.prohibitedExecutionConditions ?? null,
-    }));
-
-    const hasAlternative =
-      inv?.q4AlternativeType && inv.q4AlternativeType !== "NO_MODEL";
-
-    return {
-      agentId: agent.id,
-      name: agent.name,
-      permittedPurpose: agent.permittedPurpose,
-      businessOutcome: agent.businessOutcome,
-      registrationStatus: agent.registrationStatus,
-      authorityChain: {
-        sponsorName: inv?.q1SponsorName ?? null,
-        sponsorTitle: inv?.q1SponsorTitle ?? null,
-        sponsorEmail: inv?.q1SponsorEmail ?? null,
-        authorizedAt: inv?.q1AuthorizedAt?.toISOString() ?? null,
-      },
-      costBoundaries: {
-        costPerCallUsd: costPerCall,
-        monthlyCallVolume: agent.monthlyCallVolume,
-        monthlyTotalUsd: monthlyTotal,
-        annualTotalUsd: monthlyTotal ? monthlyTotal * 12 : null,
-        interceptionThresholdUsd: inv?.q3InterceptionThresholdUsd
-          ? parseFloat(inv.q3InterceptionThresholdUsd)
+      const classes: ManifestExecutionClass[] = (inv?.executionClasses ?? []).map((ec) => ({
+        id: ec.id,
+        action: ec.action,
+        target: ec.target,
+        scope: ec.scope,
+        consequenceRationale: ec.consequenceRationale,
+        validationStatus: ec.validationStatus,
+        validatedBy: ec.validatedBy ?? null,
+        validationEvidence: ec.validationEvidence ?? null,
+        validationDate: ec.validationDate?.toISOString() ?? null,
+        authority: ec.authority
+          ? {
+              level: ec.authority.authorityLevel,
+              role: ec.authority.authorityRole,
+              basis: ec.authority.authorityBasis ?? null,
+              holderName: ec.authority.currentHolderName ?? null,
+              holderTitle: ec.authority.currentHolderTitle ?? null,
+              evidenceRequirement: ec.authority.evidenceRequirement,
+              runtimeSignal: ec.authority.runtimeSignal,
+            }
           : null,
-        escalationThresholdUsd: inv?.q3EscalationThresholdUsd
-          ? parseFloat(inv.q3EscalationThresholdUsd)
+      }));
+
+      const boundary = inv?.enforcementBoundary;
+
+      // Enforcement readiness: signed = false at generation time
+      const { ready, blockers } = await checkEnforcementReadiness(agent.id, false);
+      if (ready) enforcementReadyCount++;
+
+      return {
+        agentId: agent.id,
+        investigationId: inv?.id ?? null,
+        name: agent.name,
+        registrationStatus: agent.registrationStatus,
+        permittedPurpose: agent.permittedPurpose,
+        businessOutcome: agent.businessOutcome,
+        disposition: inv?.disposition ?? null,
+        dispositionReasoning: inv?.dispositionReasoning ?? null,
+        costPerCallUsd: inv?.costPerCallUsd ? parseFloat(inv.costPerCallUsd) : null,
+        monthlyVolume: inv?.monthlyVolume ?? null,
+        riskNote: inv?.riskNote ?? null,
+        alternativeNote: inv?.alternativeNote ?? null,
+        defaultExecutionRule: "DENY" as const,
+        executionClasses: classes,
+        enforcementBoundary: boundary
+          ? {
+              executionPath: boundary.executionPath,
+              bypassPaths: boundary.bypassPaths ?? null,
+              requiredBoundary: boundary.requiredBoundary,
+              dalxSuitability: boundary.dalxSuitability,
+              integrationPoint: boundary.integrationPoint,
+              requiredExecutionInfo: boundary.requiredExecutionInfo ?? null,
+              downstreamValidationPoint: boundary.downstreamValidationPoint,
+              blocker: boundary.blocker ?? null,
+              sponsorDecision: boundary.sponsorDecision ?? null,
+            }
           : null,
-      },
-      evidenceStandard: {
-        type: inv?.q2EvidenceType ?? null,
-        strength: inv?.q2EvidenceStrength ?? null,
-        description: inv?.q2EvidenceDescription ?? null,
-        activationThreshold: inv?.q2ActivationThreshold ?? null,
-        expansionConditions: inv?.q2ExpansionConditions ?? null,
-      },
-      alternativeMechanism: hasAlternative
-        ? {
-            type: inv?.q4AlternativeType ?? null,
-            description: inv?.q4AlternativeDescription ?? null,
-            estimatedCostPerCallUsd: inv?.q4EstimatedCostPerCallUsd
-              ? parseFloat(inv.q4EstimatedCostPerCallUsd)
-              : null,
-            feasibility: inv?.q4Feasibility ?? null,
-            migrationConditions: inv?.q4MigrationConditions ?? null,
-            clientImplementationRequired: inv?.q4ClientImplementationRequired ?? true,
-          }
-        : null,
-      riskConditions: risks,
-      governancePosture: posture
-        ? {
-            posture: posture.posture,
-            dalxEnforcementPosture: posture.dalxEnforcementPosture,
-            reason: posture.reason,
-            evidenceSummary: posture.evidenceSummary ?? null,
-            conditionForChange: posture.conditionForChange,
-            estimatedAnnualSavingsUsd: posture.estimatedAnnualSavingsUsd
-              ? parseFloat(posture.estimatedAnnualSavingsUsd)
-              : null,
-            lockStatus: posture.lockStatus,
-            lockedAt: posture.lockedAt?.toISOString() ?? null,
-          }
-        : null,
-      investigationCompletedAt: inv?.completedAt?.toISOString() ?? null,
-    };
-  });
+        enforcementReady: false, // Updated to true on signing if conditions are met
+        enforcementReadyBlockers: blockers,
+        investigationCompletedAt: inv?.completedAt?.toISOString() ?? null,
+      };
+    }),
+  );
 
   const latestVersion = engagement.governanceManifests[0]?.version ?? 0;
   const nextVersion = latestVersion + 1;
 
   const manifestJson: ManifestJson = {
-    manifestVersion: "2.0",
+    manifestVersion: "3.0",
     manifestStatus: "PROPOSED",
     engagementId,
     companyName: engagement.companyName,
     generatedAt: new Date().toISOString(),
     signedAt: null,
     signedBy: null,
+    enforcementReady: false,
     summary: {
       totalAgents: engagement.registeredAgents.length,
-      postureBreakdown,
-      totalLockedPostures: lockedCount,
-      estimatedAnnualSavingsUsd: totalSavings,
+      dispositionBreakdown,
+      enforcementReadyCount: 0, // Computed at signing
     },
     agents: agentEntries,
   };
@@ -247,13 +229,14 @@ export async function generateManifest(engagementId: string) {
       manifestJson,
       version: nextVersion,
       manifestStatus: "PROPOSED",
+      enforcementReady: false,
     })
     .returning();
 
   return manifest;
 }
 
-// ── Manifest State Machine ────────────────────────────────────────────────────
+// ── Manifest Signing ──────────────────────────────────────────────────────────
 
 export async function signManifest(
   manifestId: string,
@@ -261,6 +244,7 @@ export async function signManifest(
 ) {
   const manifest = await db.query.governanceManifests.findFirst({
     where: eq(governanceManifests.id, manifestId),
+    with: { engagement: { with: { registeredAgents: { where: isNull(registeredAgents.deletedAt) } } } },
   });
 
   if (!manifest) throw new Error("Manifest not found");
@@ -268,12 +252,31 @@ export async function signManifest(
     throw new Error(`Cannot sign a manifest in ${manifest.manifestStatus} status`);
   }
 
+  // Recompute enforcement readiness for each agent now that the manifest will be signed
+  const agents = manifest.engagement.registeredAgents;
+  let enforcementReadyCount = 0;
+  const updatedAgentEntries = await Promise.all(
+    ((manifest.manifestJson as ManifestJson).agents ?? []).map(async (entry) => {
+      const { ready, blockers } = await checkEnforcementReadiness(entry.agentId, true);
+      if (ready) enforcementReadyCount++;
+      return { ...entry, enforcementReady: ready, enforcementReadyBlockers: blockers };
+    }),
+  );
+
+  const manifestReady = enforcementReadyCount === agents.length && agents.length > 0;
   const signedAt = new Date();
+
   const updatedJson: ManifestJson = {
     ...(manifest.manifestJson as ManifestJson),
     manifestStatus: "SIGNED",
     signedAt: signedAt.toISOString(),
     signedBy: { name: signer.name, title: signer.title, email: signer.email },
+    enforcementReady: manifestReady,
+    summary: {
+      ...(manifest.manifestJson as ManifestJson).summary,
+      enforcementReadyCount,
+    },
+    agents: updatedAgentEntries,
   };
 
   const [updated] = await db
@@ -281,6 +284,8 @@ export async function signManifest(
     .set({
       manifestStatus: "SIGNED",
       manifestJson: updatedJson,
+      enforcementReady: manifestReady,
+      enforcementReadyAt: manifestReady ? signedAt : null,
       signedAt,
       signedByName: signer.name,
       signedByTitle: signer.title,
@@ -294,7 +299,6 @@ export async function signManifest(
 }
 
 export async function supersedeManifest(engagementId: string) {
-  // generateManifest handles superseding the current SIGNED manifest and creates the new PROPOSED one
   return generateManifest(engagementId);
 }
 

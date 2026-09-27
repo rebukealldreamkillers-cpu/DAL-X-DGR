@@ -28,35 +28,12 @@ export const postureEnum = pgEnum("posture", [
   "KILL",
 ]);
 
+// Used in registeredAgents.existingEvidenceStatus (census-level field)
 export const evidenceTypeEnum = pgEnum("evidence_type", [
   "NONE",
   "ANECDOTAL",
   "DOCUMENTED",
 ]);
-
-export const evidenceStrengthEnum = pgEnum("evidence_strength", [
-  "NONE",
-  "WEAK",
-  "MODERATE",
-  "STRONG",
-]);
-
-export const alternativeTypeEnum = pgEnum("alternative_type", [
-  "RULES_BASED",
-  "RPA",
-  "SMALLER_MODEL",
-  "NO_MODEL",
-  "OTHER",
-]);
-
-export const riskCategoryEnum = pgEnum("risk_category", [
-  "OPERATIONAL",
-  "REGULATORY",
-  "COMPLIANCE",
-  "REPUTATIONAL",
-]);
-
-export const riskSeverityEnum = pgEnum("risk_severity", ["LOW", "MEDIUM", "HIGH"]);
 
 export const defenseFileStatusEnum = pgEnum("defense_file_status", [
   "DRAFT",
@@ -78,9 +55,22 @@ export const manifestStatusEnum = pgEnum("manifest_status", [
   "SUPERSEDED",
 ]);
 
-export const postureLockStatusEnum = pgEnum("posture_lock_status", [
-  "PROPOSED",
-  "LOCKED",
+export const authorityLevelEnum = pgEnum("authority_level", [
+  "AUTO",
+  "REVIEW",
+  "ESCALATE",
+  "DENY",
+]);
+
+export const validationStatusEnum = pgEnum("validation_status", [
+  "VALIDATED",
+  "NOT_VALIDATED",
+]);
+
+export const dalxSuitabilityEnum = pgEnum("dalx_suitability", [
+  "SUITABLE",
+  "PREREQUISITES_REQUIRED",
+  "NOT_SUITABLE",
 ]);
 
 // ── Engagements ───────────────────────────────────────────────────────────────
@@ -129,7 +119,7 @@ export const registeredAgents = pgTable("registered_agents", {
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// ── Investigations (Six Questions per Agent) ──────────────────────────────────
+// ── Investigations ────────────────────────────────────────────────────────────
 
 export const investigations = pgTable("investigations", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -137,78 +127,114 @@ export const investigations = pgTable("investigations", {
     .notNull()
     .unique()
     .references(() => registeredAgents.id, { onDelete: "cascade" }),
+  engagementId: uuid("engagement_id")
+    .notNull()
+    .references(() => engagements.id, { onDelete: "cascade" }),
 
-  // Q1 — Sponsor, authorized requirement, and permitted purpose
-  q1SponsorName: text("q1_sponsor_name"),
-  q1SponsorTitle: text("q1_sponsor_title"),
-  q1SponsorEmail: text("q1_sponsor_email"),
-  q1BusinessRequirement: text("q1_business_requirement"),
-  q1PermittedPurpose: text("q1_permitted_purpose"),
-  q1AuthorizedAt: timestamp("q1_authorized_at"),
-  q1CompletedAt: timestamp("q1_completed_at"),
+  // Defense file sponsor — the named individual who signs the decision record
+  sponsorName: text("sponsor_name"),
+  sponsorTitle: text("sponsor_title"),
+  sponsorEmail: text("sponsor_email"),
 
-  // Q2 — Evidence standard
-  q2EvidenceType: evidenceTypeEnum("q2_evidence_type"),
-  q2EvidenceDescription: text("q2_evidence_description"),
-  q2EvidenceStrength: evidenceStrengthEnum("q2_evidence_strength"),
-  q2ActivationThreshold: text("q2_activation_threshold"),
-  q2ExpansionConditions: text("q2_expansion_conditions"),
-  q2CompletedAt: timestamp("q2_completed_at"),
+  // Section 4 — Business Value and Disposition
+  costPerCallUsd: numeric("cost_per_call_usd", { precision: 10, scale: 6 }),
+  monthlyVolume: integer("monthly_volume"),
+  riskNote: text("risk_note"),
+  alternativeNote: text("alternative_note"),
+  disposition: postureEnum("disposition"),
+  dispositionReasoning: text("disposition_reasoning"),
+  analystName: text("analyst_name"),
 
-  // Q3 — Cost boundaries
-  q3CostPerCallUsd: numeric("q3_cost_per_call_usd", { precision: 10, scale: 6 }),
-  q3MonthlyVolume: integer("q3_monthly_volume"),
-  q3MonthlyTotalUsd: numeric("q3_monthly_total_usd", { precision: 12, scale: 2 }),
-  q3AnnualizedUsd: numeric("q3_annualized_usd", { precision: 14, scale: 2 }),
-  q3InterceptionThresholdUsd: numeric("q3_interception_threshold_usd", { precision: 10, scale: 6 }),
-  q3EscalationThresholdUsd: numeric("q3_escalation_threshold_usd", { precision: 14, scale: 2 }),
-  q3ManualOverride: boolean("q3_manual_override").default(false),
-  q3ManualOverrideNote: text("q3_manual_override_note"),
-  q3CompletedAt: timestamp("q3_completed_at"),
-
-  // Q4 — Alternative mechanism
-  q4AlternativeType: alternativeTypeEnum("q4_alternative_type"),
-  q4AlternativeDescription: text("q4_alternative_description"),
-  q4EstimatedCostPerCallUsd: numeric("q4_estimated_cost_per_call_usd", { precision: 10, scale: 6 }),
-  q4Feasibility: text("q4_feasibility"), // LOW | MEDIUM | HIGH
-  q4MigrationConditions: text("q4_migration_conditions"),
-  q4ClientImplementationRequired: boolean("q4_client_implementation_required").default(true),
-  q4CompletedAt: timestamp("q4_completed_at"),
-
-  // Q5 — Risk conditions (JSONB array of expanded RiskEntry)
-  q5Risks: jsonb("q5_risks").$type<RiskEntry[]>().default([]),
-  q5CompletedAt: timestamp("q5_completed_at"),
-
-  // Q6 — Governance posture
-  q6RecommendedPosture: postureEnum("q6_recommended_posture"),
-  q6DalxEnforcementPosture: text("q6_dalx_enforcement_posture"),
-  q6ReasoningChain: text("q6_reasoning_chain"),
-  q6AnalystAccepted: boolean("q6_analyst_accepted"),
-  q6AnalystOverrideNote: text("q6_analyst_override_note"),
-  q6CompletedAt: timestamp("q6_completed_at"),
+  // Section completion tracking
+  section1CompletedAt: timestamp("section1_completed_at"), // execution class declaration
+  section2CompletedAt: timestamp("section2_completed_at"), // authority matrix
+  section3CompletedAt: timestamp("section3_completed_at"), // enforcement boundary
+  section4CompletedAt: timestamp("section4_completed_at"), // business value and disposition
 
   completedAt: timestamp("completed_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
-// ── Governance Postures (Decision Registry) ───────────────────────────────────
+// ── Execution Classes (Section 1 — declared by sponsor team, validated by FDO) ─
 
-export const governancePostures = pgTable("governance_postures", {
+export const executionClasses = pgTable("execution_classes", {
   id: uuid("id").primaryKey().defaultRandom(),
+  investigationId: uuid("investigation_id")
+    .notNull()
+    .references(() => investigations.id, { onDelete: "cascade" }),
   agentId: uuid("agent_id")
     .notNull()
-    .unique()
     .references(() => registeredAgents.id, { onDelete: "cascade" }),
-  posture: postureEnum("posture").notNull(),
-  dalxEnforcementPosture: text("dalx_enforcement_posture").notNull(),
-  reason: text("reason").notNull(),
-  evidenceSummary: text("evidence_summary"),
-  conditionForChange: text("condition_for_change").notNull(),
-  estimatedAnnualSavingsUsd: numeric("estimated_annual_savings_usd", { precision: 14, scale: 2 }),
-  lockStatus: postureLockStatusEnum("lock_status").notNull().default("PROPOSED"),
-  analystClerkId: text("analyst_clerk_id"),
-  lockedAt: timestamp("locked_at"),
+  action: text("action").notNull(),
+  target: text("target").notNull(),
+  scope: text("scope").notNull(),
+  consequenceRationale: text("consequence_rationale").notNull(),
+  validationStatus: validationStatusEnum("validation_status").notNull().default("NOT_VALIDATED"),
+  // Traceability — required before validationStatus may be set to VALIDATED
+  validatedBy: text("validated_by"),
+  validationEvidence: text("validation_evidence"),
+  validationDate: timestamp("validation_date"),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// ── Authority Matrix (Section 2 — one entry per execution class) ──────────────
+
+export const authorityMatrix = pgTable("authority_matrix", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  executionClassId: uuid("execution_class_id")
+    .notNull()
+    .unique()
+    .references(() => executionClasses.id, { onDelete: "cascade" }),
+  investigationId: uuid("investigation_id")
+    .notNull()
+    .references(() => investigations.id, { onDelete: "cascade" }),
+  authorityLevel: authorityLevelEnum("authority_level").notNull(),
+  // Required for all levels. For AUTO: the approved policy name. For REVIEW/ESCALATE: the role title.
+  authorityRole: text("authority_role").notNull(),
+  // For AUTO: the specific policy or rule permitting automatic authorization.
+  // For DENY: the rule mandating denial. Nullable for REVIEW/ESCALATE.
+  authorityBasis: text("authority_basis"),
+  // For REVIEW and ESCALATE only — the person who held this authority when the DGR was completed
+  currentHolderName: text("current_holder_name"),
+  currentHolderTitle: text("current_holder_title"),
+  // What evidence must exist at execution time before a decision can be made
+  evidenceRequirement: text("evidence_requirement").notNull(),
+  // How DAL-X identifies this execution class at runtime
+  runtimeSignal: text("runtime_signal").notNull(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").notNull().defaultNow(),
+});
+
+// ── Enforcement Boundary (Section 3 — one entry per investigation) ────────────
+
+export const enforcementBoundary = pgTable("enforcement_boundary", {
+  id: uuid("id").primaryKey().defaultRandom(),
+  investigationId: uuid("investigation_id")
+    .notNull()
+    .unique()
+    .references(() => investigations.id, { onDelete: "cascade" }),
+  agentId: uuid("agent_id")
+    .notNull()
+    .references(() => registeredAgents.id, { onDelete: "cascade" }),
+  // Brief sequence: agent → orchestrator → gateway → DAL-X → downstream
+  executionPath: text("execution_path").notNull(),
+  // Named bypass paths, if any; null if none identified
+  bypassPaths: text("bypass_paths"),
+  requiredBoundary: text("required_boundary").notNull(),
+  dalxSuitability: dalxSuitabilityEnum("dalx_suitability").notNull(),
+  integrationPoint: text("integration_point").notNull(),
+  // What execution information DAL-X needs to enforce at this boundary
+  requiredExecutionInfo: text("required_execution_info"),
+  downstreamValidationPoint: text("downstream_validation_point").notNull(),
+  // For PREREQUISITES_REQUIRED or NOT_SUITABLE — names the specific blocker
+  blocker: text("blocker"),
+  // Sponsor decision for NOT_SUITABLE — enterprise owns the operating decision
+  // "SUSPEND" | "ESTABLISH_BOUNDARY" | "OVERRIDE_ACCEPTED"
+  sponsorDecision: text("sponsor_decision"),
+  sponsorDecisionNote: text("sponsor_decision_note"),
+  sponsorDecisionAt: timestamp("sponsor_decision_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
@@ -231,7 +257,7 @@ export const defenseFiles = pgTable("defense_files", {
   signedByIp: text("signed_by_ip"),
   signedByUserAgent: text("signed_by_user_agent"),
 
-  // Sponsor override (recorded separately from Jochanni Labs proposed posture)
+  // Sponsor departure — recorded separately from the Jochanni Labs recommended disposition
   sponsorOverridePosture: postureEnum("sponsor_override_posture"),
   sponsorOverrideRationale: text("sponsor_override_rationale"),
   sponsorOverrideAt: timestamp("sponsor_override_at"),
@@ -239,8 +265,8 @@ export const defenseFiles = pgTable("defense_files", {
 
   // Tracking keys (Jira / Linear)
   trackingKey: text("tracking_key"),
-  trackingSystem: text("tracking_system"), // "jira" | "linear"
-  trackingStatus: text("tracking_status"), // "open" | "in_progress" | "done"
+  trackingSystem: text("tracking_system"),
+  trackingStatus: text("tracking_status"),
 
   sentAt: timestamp("sent_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
@@ -257,7 +283,11 @@ export const governanceManifests = pgTable("governance_manifests", {
   manifestStatus: manifestStatusEnum("manifest_status").notNull().default("PROPOSED"),
   manifestJson: jsonb("manifest_json").notNull(),
   version: integer("version").notNull().default(1),
-  // Populated on signing — immutable after that point
+  // A signed manifest is not automatically ready for enforcement.
+  // True only when: disposition permits operation, all classes validated,
+  // suitability is SUITABLE, sponsor has signed, prerequisites resolved.
+  enforcementReady: boolean("enforcement_ready").notNull().default(false),
+  enforcementReadyAt: timestamp("enforcement_ready_at"),
   signedAt: timestamp("signed_at"),
   signedByName: text("signed_by_name"),
   signedByTitle: text("signed_by_title"),
@@ -289,6 +319,7 @@ export const engagementsRelations = relations(engagements, ({ many }) => ({
   registeredAgents: many(registeredAgents),
   governanceManifests: many(governanceManifests),
   checkpointResponses: many(checkpointResponses),
+  investigations: many(investigations),
 }));
 
 export const registeredAgentsRelations = relations(registeredAgents, ({ one, many }) => ({
@@ -297,21 +328,55 @@ export const registeredAgentsRelations = relations(registeredAgents, ({ one, man
     references: [engagements.id],
   }),
   investigation: one(investigations),
-  governancePosture: one(governancePostures),
   defenseFile: one(defenseFiles),
+  executionClasses: many(executionClasses),
+  enforcementBoundary: one(enforcementBoundary),
   checkpointResponses: many(checkpointResponses),
 }));
 
-export const investigationsRelations = relations(investigations, ({ one }) => ({
+export const investigationsRelations = relations(investigations, ({ one, many }) => ({
   agent: one(registeredAgents, {
     fields: [investigations.agentId],
     references: [registeredAgents.id],
   }),
+  engagement: one(engagements, {
+    fields: [investigations.engagementId],
+    references: [engagements.id],
+  }),
+  executionClasses: many(executionClasses),
+  enforcementBoundary: one(enforcementBoundary),
 }));
 
-export const governancePosturesRelations = relations(governancePostures, ({ one }) => ({
+export const executionClassesRelations = relations(executionClasses, ({ one }) => ({
+  investigation: one(investigations, {
+    fields: [executionClasses.investigationId],
+    references: [investigations.id],
+  }),
   agent: one(registeredAgents, {
-    fields: [governancePostures.agentId],
+    fields: [executionClasses.agentId],
+    references: [registeredAgents.id],
+  }),
+  authority: one(authorityMatrix),
+}));
+
+export const authorityMatrixRelations = relations(authorityMatrix, ({ one }) => ({
+  executionClass: one(executionClasses, {
+    fields: [authorityMatrix.executionClassId],
+    references: [executionClasses.id],
+  }),
+  investigation: one(investigations, {
+    fields: [authorityMatrix.investigationId],
+    references: [investigations.id],
+  }),
+}));
+
+export const enforcementBoundaryRelations = relations(enforcementBoundary, ({ one }) => ({
+  investigation: one(investigations, {
+    fields: [enforcementBoundary.investigationId],
+    references: [investigations.id],
+  }),
+  agent: one(registeredAgents, {
+    fields: [enforcementBoundary.agentId],
     references: [registeredAgents.id],
   }),
 }));
@@ -343,22 +408,13 @@ export const checkpointResponsesRelations = relations(checkpointResponses, ({ on
 
 // ── TypeScript Types ──────────────────────────────────────────────────────────
 
-export type RiskEntry = {
-  id: string;
-  description: string;
-  category: "OPERATIONAL" | "REGULATORY" | "COMPLIANCE" | "REPUTATIONAL";
-  severity: "LOW" | "MEDIUM" | "HIGH";
-  outputConditions: string;
-  escalationTrigger: string;
-  requiredReviewerName: string;
-  requiredReviewerTitle: string;
-  prohibitedExecutionConditions?: string | null;
-};
-
 export type Posture = "KEEP" | "DOWNSIZE" | "REPLACE" | "KILL";
+export type Disposition = Posture;
+export type AuthorityLevel = "AUTO" | "REVIEW" | "ESCALATE" | "DENY";
+export type ValidationStatus = "VALIDATED" | "NOT_VALIDATED";
+export type DalxSuitability = "SUITABLE" | "PREREQUISITES_REQUIRED" | "NOT_SUITABLE";
 export type ManifestStatus = "PROPOSED" | "SIGNED" | "SUPERSEDED";
 export type RegistrationStatus = "ACTIVE" | "SUSPENDED" | "DECOMMISSIONING" | "CLOSED";
-export type PostureLockStatus = "PROPOSED" | "LOCKED";
 
 export type Engagement = typeof engagements.$inferSelect;
 export type NewEngagement = typeof engagements.$inferInsert;
@@ -366,8 +422,12 @@ export type RegisteredAgent = typeof registeredAgents.$inferSelect;
 export type NewRegisteredAgent = typeof registeredAgents.$inferInsert;
 export type Investigation = typeof investigations.$inferSelect;
 export type NewInvestigation = typeof investigations.$inferInsert;
-export type GovernancePosture = typeof governancePostures.$inferSelect;
-export type NewGovernancePosture = typeof governancePostures.$inferInsert;
+export type ExecutionClass = typeof executionClasses.$inferSelect;
+export type NewExecutionClass = typeof executionClasses.$inferInsert;
+export type AuthorityMatrixRow = typeof authorityMatrix.$inferSelect;
+export type NewAuthorityMatrixRow = typeof authorityMatrix.$inferInsert;
+export type EnforcementBoundary = typeof enforcementBoundary.$inferSelect;
+export type NewEnforcementBoundary = typeof enforcementBoundary.$inferInsert;
 export type DefenseFile = typeof defenseFiles.$inferSelect;
 export type NewDefenseFile = typeof defenseFiles.$inferInsert;
 export type GovernanceManifest = typeof governanceManifests.$inferSelect;

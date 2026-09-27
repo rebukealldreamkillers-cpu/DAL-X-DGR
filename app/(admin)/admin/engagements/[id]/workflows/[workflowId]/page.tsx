@@ -1,10 +1,10 @@
 import { notFound } from "next/navigation";
 import { getWorkflow } from "@/lib/workflows";
 import { getEngagement } from "@/lib/engagements";
-import { getOrCreateInvestigation } from "@/lib/investigations";
+import { getOrCreateInvestigationFull } from "@/lib/investigations";
 import { InvestigationWorkspace } from "@/components/investigation/investigation-workspace";
+import type { FullInvestigation } from "@/components/investigation/investigation-workspace";
 import { StageBadge } from "@/components/engagements/stage-badge";
-import { PostureBadge } from "@/components/engagements/verdict-badge";
 import { Separator } from "@/components/ui/separator";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
@@ -24,7 +24,7 @@ export default async function WorkflowDetailPage({
 
   if (!engagement || !workflow || workflow.engagementId !== id) notFound();
 
-  const investigation = await getOrCreateInvestigation(workflowId);
+  const investigation = await getOrCreateInvestigationFull(workflowId) as FullInvestigation;
 
   const stage = engagement.stage as "CENSUS" | "INVESTIGATION" | "REGISTRY" | "DEFENSE_FILES" | "CLOSED";
   const costPerCall = workflow.costPerCallUsd ? parseFloat(workflow.costPerCallUsd) : null;
@@ -76,14 +76,6 @@ export default async function WorkflowDetailPage({
           <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Existing evidence</p>
           <p className="mt-0.5">{workflow.existingEvidenceStatus ?? "—"}</p>
         </div>
-        {workflow.governancePosture && (
-          <div>
-            <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Governance posture</p>
-            <div className="mt-0.5">
-              <PostureBadge posture={workflow.governancePosture.posture as "KEEP" | "DOWNSIZE" | "REPLACE" | "KILL"} />
-            </div>
-          </div>
-        )}
       </div>
 
       <Separator />
@@ -93,14 +85,18 @@ export default async function WorkflowDetailPage({
         <div className="border rounded-lg p-10 text-center text-muted-foreground bg-background">
           <p className="text-sm font-medium">Investigation not yet open</p>
           <p className="text-xs mt-1">
-            Advance this engagement to the Investigation stage to begin the six-question governance assessment.
+            Advance this engagement to the Investigation stage to begin the Decision Governance Review.
           </p>
         </div>
-      ) : (
+      ) : investigation ? (
         <InvestigationWorkspace
           agentId={workflowId}
           investigation={investigation}
         />
+      ) : (
+        <div className="border rounded-lg p-10 text-center text-muted-foreground bg-background">
+          <p className="text-sm">Failed to load investigation.</p>
+        </div>
       )}
     </div>
   );

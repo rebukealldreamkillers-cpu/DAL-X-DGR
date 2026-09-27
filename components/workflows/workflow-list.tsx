@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { PostureBadge } from "@/components/engagements/verdict-badge";
 import { ButtonLink } from "@/components/ui/button-link";
 import {
   ArrowUp,
@@ -35,8 +34,7 @@ type AgentRow = {
   existingEvidenceStatus: EvidenceStatus | null;
   registrationStatus?: RegistrationStatus | null;
   sortOrder: number;
-  investigation?: { completedAt: string | null } | null;
-  governancePosture?: { posture: Posture } | null;
+  investigation?: { completedAt: string | null; disposition?: string | null } | null;
   defenseFile?: { status: string } | null;
 };
 
@@ -220,12 +218,9 @@ export function WorkflowList({ engagementId, workflows: initial, stage }: Props)
                     <span className={cn("text-xs font-medium", evidenceInfo.cls)}>
                       {evidenceInfo.label}
                     </span>
-                    {agent.governancePosture && (
-                      <PostureBadge posture={agent.governancePosture.posture} />
-                    )}
-                    {agent.investigation?.completedAt && !agent.governancePosture && (
+                    {agent.investigation?.completedAt && (
                       <Badge variant="outline" className="text-[10px] bg-violet-50 text-violet-700 border-violet-200">
-                        Investigation done
+                        DGR complete{agent.investigation.disposition ? ` · ${agent.investigation.disposition}` : ""}
                       </Badge>
                     )}
                   </div>
@@ -331,7 +326,7 @@ export function WorkflowList({ engagementId, workflows: initial, stage }: Props)
           {/* Stage gate hint */}
           {stage === "CENSUS" && (
             <p className="text-xs text-muted-foreground">
-              Use <span className="font-medium">Advance to Investigation</span> above to lock the census and begin the six-question governance assessment.
+              Use <span className="font-medium">Advance to Investigation</span> above to lock the census and begin the Decision Governance Review.
             </p>
           )}
         </div>

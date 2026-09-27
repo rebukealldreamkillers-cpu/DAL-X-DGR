@@ -6,7 +6,6 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { PostureBadge } from "@/components/engagements/verdict-badge";
 import {
   CheckCircle2,
   Circle,
@@ -17,27 +16,25 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Posture = "KEEP" | "DOWNSIZE" | "REPLACE" | "KILL";
+type Disposition = "KEEP" | "DOWNSIZE" | "REPLACE" | "KILL";
 type Status = "DRAFT" | "SENT" | "SIGNED" | "OVERRIDDEN";
 
 export type DefenseFileWorkflow = {
   id: string;
   name: string;
   businessOutcome: string;
-  governancePosture: {
-    posture: Posture;
-    lockStatus: string;
-  } | null;
   investigation: {
-    q1SponsorName: string | null;
-    q1SponsorEmail: string | null;
+    disposition: Disposition | null;
+    sponsorName: string | null;
+    sponsorEmail: string | null;
+    completedAt: string | null;
   } | null;
   defenseFile: {
     id: string;
     status: Status;
     signatureToken: string | null;
     signedAt: string | null;
-    sponsorOverridePosture: Posture | null;
+    sponsorOverridePosture: Disposition | null;
     sponsorOverrideName: string | null;
     trackingKey: string | null;
     trackingSystem: string | null;
@@ -56,6 +53,13 @@ const STATUS_CONFIG: Record<Status, { label: string; class: string }> = {
   SENT: { label: "Awaiting signature", class: "bg-amber-50 text-amber-700 border-amber-200" },
   SIGNED: { label: "Signed", class: "bg-emerald-50 text-emerald-700 border-emerald-200" },
   OVERRIDDEN: { label: "Departure recorded", class: "bg-orange-50 text-orange-700 border-orange-200" },
+};
+
+const DISPOSITION_STYLES: Record<Disposition, { border: string; bg: string; text: string }> = {
+  KEEP: { border: "border-emerald-400", bg: "bg-emerald-50", text: "text-emerald-800" },
+  DOWNSIZE: { border: "border-amber-400", bg: "bg-amber-50", text: "text-amber-800" },
+  REPLACE: { border: "border-orange-400", bg: "bg-orange-50", text: "text-orange-800" },
+  KILL: { border: "border-red-400", bg: "bg-red-50", text: "text-red-800" },
 };
 
 export function DefenseFilePanel({ workflow, engagementId }: Props) {
@@ -77,8 +81,10 @@ export function DefenseFilePanel({ workflow, engagementId }: Props) {
   const df = workflow.defenseFile;
   const status: Status = df?.status ?? "DRAFT";
   const statusCfg = STATUS_CONFIG[status];
-  const postureLocked = workflow.governancePosture?.lockStatus === "LOCKED";
+  const investigationComplete = !!workflow.investigation?.completedAt;
   const signed = status === "SIGNED" || status === "OVERRIDDEN";
+  const disposition = workflow.investigation?.disposition;
+  const dispStyle = disposition ? DISPOSITION_STYLES[disposition] : null;
 
   async function sendDefenseFile() {
     setSending(true);
@@ -115,6 +121,9 @@ export function DefenseFilePanel({ workflow, engagementId }: Props) {
     }
   }
 
+  // engagementId used for future navigation if needed
+  void engagementId;
+
   return (
     <div className="border rounded-lg overflow-hidden">
       {/* Header row */}
@@ -138,15 +147,19 @@ export function DefenseFilePanel({ workflow, engagementId }: Props) {
             >
               {statusCfg.label}
             </Badge>
-            {workflow.governancePosture && (
-              <PostureBadge posture={workflow.governancePosture.posture} />
+            {dispStyle && disposition && (
+              <span
+                className={`inline-block px-2 py-0.5 rounded text-xs font-medium border ${dispStyle.border} ${dispStyle.bg} ${dispStyle.text}`}
+              >
+                {disposition}
+              </span>
             )}
           </div>
-          {workflow.investigation?.q1SponsorName && (
+          {workflow.investigation?.sponsorName && (
             <p className="text-xs text-muted-foreground mt-0.5">
-              Sponsor: {workflow.investigation.q1SponsorName}
-              {workflow.investigation.q1SponsorEmail && (
-                <> · {workflow.investigation.q1SponsorEmail}</>
+              Sponsor: {workflow.investigation.sponsorName}
+              {workflow.investigation.sponsorEmail && (
+                <> · {workflow.investigation.sponsorEmail}</>
               )}
             </p>
           )}
@@ -177,8 +190,8 @@ export function DefenseFilePanel({ workflow, engagementId }: Props) {
                 size="sm"
                 variant="outline"
                 onClick={sendDefenseFile}
-                disabled={sending || !postureLocked}
-                title={!postureLocked ? "Lock the governance posture first" : undefined}
+                disabled={sending || !investigationComplete}
+                title={!investigationComplete ? "Complete the Decision Governance Review first" : undefined}
               >
                 {sending ? (
                   <Loader2 className="w-3.5 h-3.5 mr-1.5 animate-spin" />
@@ -196,9 +209,9 @@ export function DefenseFilePanel({ workflow, engagementId }: Props) {
             </p>
           )}
 
-          {!postureLocked && (
+          {!investigationComplete && (
             <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
-              Lock the governance posture in the Governance Registry before sending.
+              Complete the Decision Governance Review before sending.
             </p>
           )}
 
@@ -222,12 +235,6 @@ export function DefenseFilePanel({ workflow, engagementId }: Props) {
                   <p className="text-xs text-muted-foreground">
                     Departure recorded by: {df.sponsorOverrideName}
                   </p>
-                  {df.sponsorOverridePosture && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
-                      Override posture:{" "}
-                      <PostureBadge posture={df.sponsorOverridePosture} />
-                    </p>
-                  )}
                 </>
               )}
             </div>

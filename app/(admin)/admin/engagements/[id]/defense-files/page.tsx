@@ -52,16 +52,12 @@ export default async function DefenseFilesPage({
     id: w.id,
     name: w.name,
     businessOutcome: w.businessOutcome,
-    governancePosture: w.governancePosture
-      ? {
-          posture: w.governancePosture.posture as "KEEP" | "DOWNSIZE" | "REPLACE" | "KILL",
-          lockStatus: w.governancePosture.lockStatus,
-        }
-      : null,
     investigation: w.investigation
       ? {
-          q1SponsorName: w.investigation.q1SponsorName ?? null,
-          q1SponsorEmail: w.investigation.q1SponsorEmail ?? null,
+          disposition: (w.investigation.disposition as "KEEP" | "DOWNSIZE" | "REPLACE" | "KILL" | null) ?? null,
+          sponsorName: w.investigation.sponsorName ?? null,
+          sponsorEmail: w.investigation.sponsorEmail ?? null,
+          completedAt: w.investigation.completedAt?.toISOString() ?? null,
         }
       : null,
     defenseFile: w.defenseFile

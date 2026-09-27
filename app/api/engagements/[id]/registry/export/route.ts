@@ -2,20 +2,6 @@ import { NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
 import { getEngagement } from "@/lib/engagements";
 import { getLatestManifest, generateManifest } from "@/lib/manifests";
-import type { RiskEntry } from "@/db/schema";
-
-function toNum(v: string | null | undefined): number | null {
-  return v ? parseFloat(v) : null;
-}
-
-function fmtCurrency(n: number | null): string {
-  if (n === null) return "";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
 
 function escapeCsv(v: string | null | undefined): string {
   if (!v) return "";
@@ -39,7 +25,6 @@ export async function GET(
   const slug = engagement.companyName.replace(/\s+/g, "-").toLowerCase();
 
   if (format === "manifest") {
-    // Return the latest manifest JSON; generate if none exists
     let manifest = await getLatestManifest(id);
     if (!manifest) {
       manifest = await generateManifest(id);
@@ -58,46 +43,29 @@ export async function GET(
       "Agent",
       "Business Outcome",
       "Permitted Purpose",
-      "Monthly Cost",
-      "Annual Cost",
-      "Interception Threshold",
-      "Escalation Threshold",
-      "Evidence Type",
-      "Recommended Posture",
-      "Governance Posture",
-      "DAL-X Enforcement Action",
-      "Reason",
-      "Evidence Summary",
-      "Condition for Change",
-      "Est. Annual Savings",
-      "Locked",
+      "Disposition",
+      "Disposition Reasoning",
+      "Execution Classes",
+      "All Validated",
+      "DAL-X Suitability",
+      "Investigation Complete",
     ];
 
     const rows = engagement.registeredAgents.map((w) => {
-      const costPerCall = toNum(w.costPerCallUsd);
-      const monthly = costPerCall && w.monthlyCallVolume
-        ? costPerCall * w.monthlyCallVolume
-        : null;
-      const annual = monthly ? monthly * 12 : null;
       const inv = w.investigation;
-      const gp = w.governancePosture;
+      const classes = inv?.executionClasses ?? [];
+      const allValidated = classes.length > 0 && classes.every((ec) => ec.validationStatus === "VALIDATED");
+      const boundary = inv?.enforcementBoundary;
       return [
         escapeCsv(w.name),
         escapeCsv(w.businessOutcome),
         escapeCsv(w.permittedPurpose),
-        escapeCsv(fmtCurrency(monthly)),
-        escapeCsv(fmtCurrency(annual)),
-        escapeCsv(inv?.q3InterceptionThresholdUsd ? fmtCurrency(toNum(inv.q3InterceptionThresholdUsd)) + "/call" : ""),
-        escapeCsv(inv?.q3EscalationThresholdUsd ? fmtCurrency(toNum(inv.q3EscalationThresholdUsd)) + "/mo" : ""),
-        escapeCsv(inv?.q2EvidenceType ?? ""),
-        escapeCsv(inv?.q6RecommendedPosture ?? ""),
-        escapeCsv(gp?.posture ?? ""),
-        escapeCsv(gp?.dalxEnforcementPosture ?? ""),
-        escapeCsv(gp?.reason ?? ""),
-        escapeCsv(gp?.evidenceSummary ?? ""),
-        escapeCsv(gp?.conditionForChange ?? ""),
-        escapeCsv(gp?.estimatedAnnualSavingsUsd ? fmtCurrency(toNum(gp.estimatedAnnualSavingsUsd)) : ""),
-        gp?.lockStatus === "LOCKED" ? "Yes" : "No",
+        escapeCsv(inv?.disposition ?? ""),
+        escapeCsv(inv?.dispositionReasoning ?? ""),
+        String(classes.length),
+        allValidated ? "Yes" : classes.length === 0 ? "N/A" : "No",
+        escapeCsv(boundary?.dalxSuitability ?? ""),
+        inv?.completedAt ? "Yes" : "No",
       ].join(",");
     });
 
@@ -116,53 +84,46 @@ export async function GET(
     companyName: engagement.companyName,
     exportedAt: new Date().toISOString(),
     agents: engagement.registeredAgents.map((w) => {
-      const costPerCall = toNum(w.costPerCallUsd);
-      const monthly = costPerCall && w.monthlyCallVolume
-        ? costPerCall * w.monthlyCallVolume
-        : null;
       const inv = w.investigation;
-      const gp = w.governancePosture;
+      const classes = inv?.executionClasses ?? [];
+      const boundary = inv?.enforcementBoundary;
       return {
         id: w.id,
         name: w.name,
         businessOutcome: w.businessOutcome,
         permittedPurpose: w.permittedPurpose,
         registrationStatus: w.registrationStatus,
-        costBaseline: {
-          costPerCallUsd: costPerCall,
-          monthlyCallVolume: w.monthlyCallVolume,
-          monthlyTotalUsd: monthly,
-          annualTotalUsd: monthly ? monthly * 12 : null,
-          interceptionThresholdUsd: toNum(inv?.q3InterceptionThresholdUsd),
-          escalationThresholdUsd: toNum(inv?.q3EscalationThresholdUsd),
-        },
-        investigation: inv
+        decisionRecord: inv
           ? {
-              sponsorName: inv.q1SponsorName,
-              sponsorTitle: inv.q1SponsorTitle,
-              sponsorEmail: inv.q1SponsorEmail,
-              permittedPurpose: inv.q1PermittedPurpose,
-              evidenceType: inv.q2EvidenceType,
-              evidenceStrength: inv.q2EvidenceStrength,
-              activationThreshold: inv.q2ActivationThreshold,
-              expansionConditions: inv.q2ExpansionConditions,
-              recommendedPosture: inv.q6RecommendedPosture,
-              dalxEnforcementPosture: inv.q6DalxEnforcementPosture,
-              reasoningChain: inv.q6ReasoningChain,
-              riskConditions: (inv.q5Risks ?? []) as RiskEntry[],
+              disposition: inv.disposition,
+              dispositionReasoning: inv.dispositionReasoning,
+              costPerCallUsd: inv.costPerCallUsd ? parseFloat(inv.costPerCallUsd) : null,
+              monthlyVolume: inv.monthlyVolume,
+              riskNote: inv.riskNote,
+              alternativeNote: inv.alternativeNote,
+              executionClassCount: classes.length,
+              allExecutionClassesValidated:
+                classes.length > 0 && classes.every((ec) => ec.validationStatus === "VALIDATED"),
+              executionClasses: classes.map((ec) => ({
+                id: ec.id,
+                action: ec.action,
+                target: ec.target,
+                scope: ec.scope,
+                validationStatus: ec.validationStatus,
+                authorityLevel: ec.authority?.authorityLevel ?? null,
+                authorityRole: ec.authority?.authorityRole ?? null,
+              })),
+              enforcementBoundary: boundary
+                ? {
+                    dalxSuitability: boundary.dalxSuitability,
+                    requiredBoundary: boundary.requiredBoundary,
+                    integrationPoint: boundary.integrationPoint,
+                    downstreamValidationPoint: boundary.downstreamValidationPoint,
+                    blocker: boundary.blocker,
+                    sponsorDecision: boundary.sponsorDecision,
+                  }
+                : null,
               completedAt: inv.completedAt,
-            }
-          : null,
-        governancePosture: gp
-          ? {
-              posture: gp.posture,
-              dalxEnforcementPosture: gp.dalxEnforcementPosture,
-              reason: gp.reason,
-              evidenceSummary: gp.evidenceSummary,
-              conditionForChange: gp.conditionForChange,
-              estimatedAnnualSavingsUsd: toNum(gp.estimatedAnnualSavingsUsd),
-              lockStatus: gp.lockStatus,
-              lockedAt: gp.lockedAt,
             }
           : null,
       };

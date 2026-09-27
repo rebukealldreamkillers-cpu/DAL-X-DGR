@@ -1,5 +1,11 @@
 import { db } from "@/db";
-import { engagements, registeredAgents, investigations, governancePostures, defenseFiles, governanceManifests } from "@/db/schema";
+import {
+  engagements,
+  registeredAgents,
+  investigations,
+  defenseFiles,
+  governanceManifests,
+} from "@/db/schema";
 import { eq, desc, and, isNull } from "drizzle-orm";
 import type { Engagement } from "@/db/schema";
 
@@ -29,7 +35,6 @@ export async function getEngagements() {
       registeredAgents: {
         where: isNull(registeredAgents.deletedAt),
         with: {
-          governancePosture: true,
           investigation: true,
         },
       },
@@ -49,8 +54,15 @@ export async function getEngagement(id: string) {
         where: isNull(registeredAgents.deletedAt),
         orderBy: [registeredAgents.sortOrder],
         with: {
-          governancePosture: true,
-          investigation: true,
+          investigation: {
+            with: {
+              executionClasses: {
+                with: { authority: true },
+                orderBy: (fields, { asc }) => [asc(fields.createdAt)],
+              },
+              enforcementBoundary: true,
+            },
+          },
           defenseFile: true,
         },
       },
@@ -116,24 +128,23 @@ async function validateStageGate(
     const agentIds = engagement.registeredAgents.map((a) => a.id);
     if (agentIds.length === 0) throw new Error("No registered agents found.");
     const complete = await db.query.investigations.findMany({
-      where: and(
-        ...agentIds.map((id) => eq(investigations.agentId, id)),
-      ),
+      where: and(...agentIds.map((id) => eq(investigations.agentId, id))),
     });
-    if (complete.length < agentIds.length) {
+    const completedAgents = complete.filter((inv) => inv.completedAt !== null);
+    if (completedAgents.length < agentIds.length) {
       throw new Error("All agents must have a completed investigation before advancing.");
     }
   }
 
   if (nextStage === "DEFENSE_FILES") {
+    // All investigations must be complete (same gate as REGISTRY — ensures decision records are final)
     const agentIds = engagement.registeredAgents.map((a) => a.id);
-    const allPostures = await db.query.governancePostures.findMany({
-      where: and(
-        ...agentIds.map((id) => eq(governancePostures.agentId, id)),
-      ),
+    const complete = await db.query.investigations.findMany({
+      where: and(...agentIds.map((id) => eq(investigations.agentId, id))),
     });
-    if (allPostures.length < agentIds.length) {
-      throw new Error("All agents must have a governance posture assigned before advancing.");
+    const completedAgents = complete.filter((inv) => inv.completedAt !== null);
+    if (completedAgents.length < agentIds.length) {
+      throw new Error("All agents must have a completed investigation before advancing to Defense Files.");
     }
   }
 }
@@ -168,15 +179,18 @@ export function pendingActions(
   }
 
   if (stage === "REGISTRY") {
-    const unpostured = engagement.registeredAgents.filter((a) => !a.governancePosture);
-    if (unpostured.length > 0) actions.push(`${unpostured.length} agent(s) need a governance posture`);
+    const incomplete = engagement.registeredAgents.filter((a) => !a.investigation?.completedAt);
+    if (incomplete.length > 0) actions.push(`${incomplete.length} agent(s) pending investigation`);
   }
 
   if (stage === "DEFENSE_FILES") {
     const unsigned = engagement.registeredAgents.filter(
-      (a) => !a.defenseFile || (a.defenseFile.status !== "SIGNED" && a.defenseFile.status !== "OVERRIDDEN"),
+      (a) =>
+        !a.defenseFile ||
+        (a.defenseFile.status !== "SIGNED" && a.defenseFile.status !== "OVERRIDDEN"),
     );
-    if (unsigned.length > 0) actions.push(`${unsigned.length} defense file(s) awaiting sponsor authorization`);
+    if (unsigned.length > 0)
+      actions.push(`${unsigned.length} defense file(s) awaiting sponsor authorization`);
   }
 
   return actions;

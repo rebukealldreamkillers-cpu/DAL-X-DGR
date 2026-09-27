@@ -15,19 +15,21 @@ export async function POST(
   const data = await getDefenseFileWithFullData(workflowId);
 
   if (!data) return NextResponse.json({ error: "Workflow not found" }, { status: 404 });
-  if (data.governancePosture?.lockStatus !== "LOCKED") {
+
+  const inv = data.investigation;
+  if (!inv?.completedAt) {
     return NextResponse.json(
-      { error: "Governance posture must be locked before sending the Defense File." },
+      { error: "Investigation must be completed before sending the Defense File." },
       { status: 422 },
     );
   }
 
-  const sponsorEmail = data.investigation?.q1SponsorEmail;
-  const sponsorName = data.investigation?.q1SponsorName ?? "Executive Sponsor";
+  const sponsorEmail = inv.sponsorEmail;
+  const sponsorName = inv.sponsorName ?? "Executive Sponsor";
 
   if (!sponsorEmail) {
     return NextResponse.json(
-      { error: "No sponsor email on record. Complete Q1 of the investigation first." },
+      { error: "No sponsor email on record. Set the sponsor contact in the investigation first." },
       { status: 422 },
     );
   }

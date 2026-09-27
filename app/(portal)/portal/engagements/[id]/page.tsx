@@ -1,15 +1,21 @@
 import { notFound, redirect } from "next/navigation";
 import { auth, currentUser } from "@clerk/nextjs/server";
 import { getEngagement } from "@/lib/engagements";
-import { PostureBadge } from "@/components/engagements/verdict-badge";
 import { StageBadge } from "@/components/engagements/stage-badge";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, CheckCircle2, Circle, Shield } from "lucide-react";
+import { ChevronRight, CheckCircle2, Circle } from "lucide-react";
 import Link from "next/link";
 import type { ManifestJson } from "@/lib/manifests";
 
 export const dynamic = "force-dynamic";
+
+const DISPOSITION_STYLES: Record<string, { border: string; bg: string; text: string }> = {
+  KEEP: { border: "border-emerald-400", bg: "bg-emerald-50", text: "text-emerald-800" },
+  DOWNSIZE: { border: "border-amber-400", bg: "bg-amber-50", text: "text-amber-800" },
+  REPLACE: { border: "border-orange-400", bg: "bg-orange-50", text: "text-orange-800" },
+  KILL: { border: "border-red-400", bg: "bg-red-50", text: "text-red-800" },
+};
 
 export default async function PortalEngagementPage({
   params,
@@ -30,24 +36,17 @@ export default async function PortalEngagementPage({
     | "DEFENSE_FILES"
     | "CLOSED";
 
-  // Verify sponsor access — email must match contact or any Q1 sponsor
+  // Verify sponsor access — email must match contact or any investigation sponsor
   const user = await currentUser();
   const userEmail = user?.emailAddresses?.[0]?.emailAddress?.toLowerCase();
   const hasAccess =
     userEmail &&
     (engagement.contactEmail.toLowerCase() === userEmail ||
       engagement.registeredAgents.some(
-        (w) => w.investigation?.q1SponsorEmail?.toLowerCase() === userEmail,
+        (w) => w.investigation?.sponsorEmail?.toLowerCase() === userEmail,
       ));
 
   if (!hasAccess) notFound();
-
-  const fmt = (n: number) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0,
-    }).format(n);
 
   const STATUS_LABELS: Record<string, string> = {
     DRAFT: "Not yet sent",
@@ -92,7 +91,7 @@ export default async function PortalEngagementPage({
         <p className="text-xs text-slate-700 leading-relaxed">
           Jochanni Labs has completed the governance assessment for each AI agent in scope
           (Act 1). For each agent below, you may authorize or record a departure from the
-          proposed governance posture (Act 2). Your decision enables DAL-X to enforce the
+          proposed governance decision (Act 2). Your decision enables DAL-X to enforce the
           policy at runtime (Act 3).
         </p>
       </div>
@@ -121,16 +120,16 @@ export default async function PortalEngagementPage({
               <p className="text-xs text-muted-foreground">Agents in scope</p>
             </div>
             <div>
-              <p className="text-xl font-semibold">{manifestJson.summary.totalLockedPostures}</p>
-              <p className="text-xs text-muted-foreground">Postures locked</p>
+              <p className="text-xl font-semibold">{manifestJson.summary.enforcementReadyCount}</p>
+              <p className="text-xs text-muted-foreground">Enforcement ready</p>
             </div>
             <div>
               <p className="text-xl font-semibold">
-                {manifestJson.summary.estimatedAnnualSavingsUsd > 0
-                  ? fmt(manifestJson.summary.estimatedAnnualSavingsUsd)
-                  : "—"}
+                {Object.entries(manifestJson.summary.dispositionBreakdown)
+                  .filter(([k]) => k === "KEEP" || k === "DOWNSIZE")
+                  .reduce((s, [, c]) => s + c, 0)}
               </p>
-              <p className="text-xs text-muted-foreground">Est. annual savings</p>
+              <p className="text-xs text-muted-foreground">Permitted (KEEP / DOWNSIZE)</p>
             </div>
           </div>
         </div>
@@ -138,36 +137,37 @@ export default async function PortalEngagementPage({
 
       <Separator />
 
-      {/* Agent governance postures */}
+      {/* Agent decision records */}
       <div className="space-y-3">
-        <h2 className="text-sm font-semibold">Agent governance postures</h2>
+        <h2 className="text-sm font-semibold">Agent decision records</h2>
         {engagement.registeredAgents.length === 0 ? (
           <p className="text-sm text-muted-foreground">No agents registered.</p>
         ) : (
           <div className="border rounded-lg overflow-hidden divide-y">
             {engagement.registeredAgents.map((w) => {
-              const costPerCall = w.costPerCallUsd ? parseFloat(w.costPerCallUsd) : null;
-              const monthly = costPerCall && w.monthlyCallVolume
-                ? costPerCall * w.monthlyCallVolume
-                : null;
+              const inv = w.investigation;
               const dfStatus = w.defenseFile?.status ?? "DRAFT";
               const needsSignature = dfStatus === "SENT";
+              const disposition = inv?.disposition;
+              const dispStyle = disposition ? DISPOSITION_STYLES[disposition] : null;
 
               return (
                 <div key={w.id} className="px-5 py-4">
                   <div className="flex items-start justify-between gap-4">
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
-                        {w.governancePosture ? (
+                        {inv?.completedAt ? (
                           <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
                         ) : (
                           <Circle className="w-4 h-4 text-muted-foreground flex-shrink-0" />
                         )}
                         <p className="text-sm font-medium">{w.name}</p>
-                        {w.governancePosture && (
-                          <PostureBadge
-                            posture={w.governancePosture.posture as "KEEP" | "DOWNSIZE" | "REPLACE" | "KILL"}
-                          />
+                        {dispStyle && disposition && (
+                          <span
+                            className={`inline-block px-2 py-0.5 rounded text-xs font-medium border ${dispStyle.border} ${dispStyle.bg} ${dispStyle.text}`}
+                          >
+                            {disposition}
+                          </span>
                         )}
                         {needsSignature && (
                           <Badge
@@ -181,11 +181,6 @@ export default async function PortalEngagementPage({
                       <p className="text-xs text-muted-foreground mt-1 ml-6">
                         {w.businessOutcome}
                       </p>
-                      {monthly !== null && (
-                        <p className="text-xs text-muted-foreground mt-0.5 ml-6">
-                          {fmt(monthly)}/mo · {fmt(monthly * 12)}/yr
-                        </p>
-                      )}
                     </div>
                     <div className="flex-shrink-0 text-right">
                       <p className="text-xs text-muted-foreground">
@@ -202,36 +197,10 @@ export default async function PortalEngagementPage({
                     </div>
                   </div>
 
-                  {/* Governance posture details */}
-                  {w.governancePosture && (
-                    <div className="ml-6 mt-3 pt-3 border-t text-xs text-muted-foreground space-y-2">
-                      {/* DAL-X enforcement action */}
-                      {w.governancePosture.dalxEnforcementPosture && (
-                        <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 space-y-0.5">
-                          <div className="flex items-center gap-1.5">
-                            <Shield className="w-3 h-3 text-slate-500" />
-                            <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                              DAL-X will enforce
-                            </p>
-                          </div>
-                          <p className="text-xs text-slate-700 leading-relaxed">
-                            {w.governancePosture.dalxEnforcementPosture}
-                          </p>
-                        </div>
-                      )}
-                      <p className="leading-relaxed">{w.governancePosture.reason}</p>
-                      {w.governancePosture.conditionForChange && (
-                        <p>
-                          <strong className="text-foreground">Condition for change:</strong>{" "}
-                          {w.governancePosture.conditionForChange}
-                        </p>
-                      )}
-                      {w.governancePosture.estimatedAnnualSavingsUsd && (
-                        <p>
-                          <strong className="text-foreground">Est. annual savings:</strong>{" "}
-                          {fmt(parseFloat(w.governancePosture.estimatedAnnualSavingsUsd))}
-                        </p>
-                      )}
+                  {/* Disposition reasoning */}
+                  {inv?.dispositionReasoning && (
+                    <div className="ml-6 mt-3 pt-3 border-t text-xs text-muted-foreground">
+                      <p className="leading-relaxed">{inv.dispositionReasoning}</p>
                     </div>
                   )}
                 </div>

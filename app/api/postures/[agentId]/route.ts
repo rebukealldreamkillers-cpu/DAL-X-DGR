@@ -1,79 +1,19 @@
 import { NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
-import { getPosture, upsertPosture, lockPosture, deriveDALXEnforcementPosture } from "@/lib/postures";
-import { z } from "zod";
 
-const patchSchema = z.object({
-  posture: z.enum(["KEEP", "DOWNSIZE", "REPLACE", "KILL"]).optional(),
-  reason: z.string().min(1).optional(),
-  evidenceSummary: z.string().optional().nullable(),
-  conditionForChange: z.string().min(1).optional(),
-  estimatedAnnualSavingsUsd: z.string().optional().nullable(),
-  lock: z.boolean().optional(),
-});
+// Governance postures are no longer a separate record.
+// Disposition is recorded in the investigation (Section 4).
+// Use PATCH /api/investigations/[workflowId] with { disposition, dispositionReasoning }.
 
-export async function GET(
-  _: Request,
-  { params }: { params: Promise<{ agentId: string }> },
-) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { agentId } = await params;
-  const posture = await getPosture(agentId);
-  return NextResponse.json(posture ?? null);
+export async function GET() {
+  return NextResponse.json(
+    { error: "Use GET /api/investigations/[workflowId] — disposition is part of the investigation record." },
+    { status: 410 },
+  );
 }
 
-export async function PATCH(
-  req: Request,
-  { params }: { params: Promise<{ agentId: string }> },
-) {
-  const { userId } = await auth();
-  if (!userId) return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-
-  const { agentId } = await params;
-  const body = await req.json();
-  const parsed = patchSchema.safeParse(body);
-  if (!parsed.success) {
-    return NextResponse.json({ errors: parsed.error.flatten().fieldErrors }, { status: 422 });
-  }
-
-  const existing = await getPosture(agentId);
-  const { lock, ...fields } = parsed.data;
-
-  const hasDataFields = fields.posture || fields.reason || fields.conditionForChange;
-  if (hasDataFields && existing?.lockStatus === "LOCKED") {
-    return NextResponse.json(
-      { error: "This governance posture is locked and cannot be modified." },
-      { status: 409 },
-    );
-  }
-
-  let result;
-
-  if (fields.posture && fields.reason && fields.conditionForChange) {
-    const dalxEnforcementPosture = deriveDALXEnforcementPosture(fields.posture);
-    result = await upsertPosture(agentId, {
-      posture: fields.posture,
-      dalxEnforcementPosture,
-      reason: fields.reason,
-      evidenceSummary: fields.evidenceSummary,
-      conditionForChange: fields.conditionForChange,
-      estimatedAnnualSavingsUsd: fields.estimatedAnnualSavingsUsd,
-      analystClerkId: userId,
-    });
-  }
-
-  if (lock) {
-    const target = result ?? existing;
-    if (!target) {
-      return NextResponse.json(
-        { error: "Save the governance posture before locking." },
-        { status: 422 },
-      );
-    }
-    result = await lockPosture(agentId);
-  }
-
-  return NextResponse.json(result ?? existing ?? null);
+export async function PATCH() {
+  return NextResponse.json(
+    { error: "Use PATCH /api/investigations/[workflowId] with { disposition, dispositionReasoning }." },
+    { status: 410 },
+  );
 }

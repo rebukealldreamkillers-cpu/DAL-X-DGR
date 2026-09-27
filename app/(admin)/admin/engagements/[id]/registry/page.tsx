@@ -40,57 +40,36 @@ export default async function RegistryPage({
 
   const workflows: RegistryWorkflow[] = engagement.registeredAgents.map((w) => {
     const inv = w.investigation;
-    const gp = w.governancePosture;
     return {
       id: w.id,
+      engagementId: id,
       name: w.name,
       businessOutcome: w.businessOutcome,
       costPerCallUsd: w.costPerCallUsd ?? null,
       monthlyCallVolume: w.monthlyCallVolume ?? null,
       investigation: inv
         ? {
-            q6RecommendedPosture: inv.q6RecommendedPosture as
-              | "KEEP"
-              | "DOWNSIZE"
-              | "REPLACE"
-              | "KILL"
-              | null,
-            q6ReasoningChain: inv.q6ReasoningChain ?? null,
-            q6DalxEnforcementPosture: inv.q6DalxEnforcementPosture ?? null,
+            disposition: (inv.disposition as "KEEP" | "DOWNSIZE" | "REPLACE" | "KILL" | null) ?? null,
+            dispositionReasoning: inv.dispositionReasoning ?? null,
             completedAt: inv.completedAt?.toISOString() ?? null,
-            q3AnnualizedUsd: inv.q3AnnualizedUsd ?? null,
-          }
-        : null,
-      governancePosture: gp
-        ? {
-            id: gp.id,
-            posture: gp.posture as "KEEP" | "DOWNSIZE" | "REPLACE" | "KILL",
-            dalxEnforcementPosture: gp.dalxEnforcementPosture,
-            reason: gp.reason,
-            evidenceSummary: gp.evidenceSummary ?? null,
-            conditionForChange: gp.conditionForChange,
-            estimatedAnnualSavingsUsd: gp.estimatedAnnualSavingsUsd ?? null,
-            lockStatus: gp.lockStatus,
-            lockedAt: gp.lockedAt?.toISOString() ?? null,
+            sponsorName: inv.sponsorName ?? null,
+            analystName: inv.analystName ?? null,
           }
         : null,
     };
   });
 
   const totalWorkflows = workflows.length;
-  const assignedCount = workflows.filter((w) => !!w.governancePosture).length;
-  const lockedCount = workflows.filter((w) => w.governancePosture?.lockStatus === "LOCKED").length;
-  const totalSavings = workflows.reduce((sum, w) => {
-    const s = w.governancePosture?.estimatedAnnualSavingsUsd;
-    return sum + (s ? parseFloat(s) : 0);
-  }, 0);
+  const completeCount = workflows.filter((w) => !!w.investigation?.completedAt).length;
 
-  const fmt = (n: number) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0,
-    }).format(n);
+  const dispositionCounts = workflows.reduce<Record<string, number>>(
+    (acc, w) => {
+      const d = w.investigation?.disposition;
+      if (d) acc[d] = (acc[d] ?? 0) + 1;
+      return acc;
+    },
+    {},
+  );
 
   return (
     <div className="p-8 max-w-4xl mx-auto space-y-8">
@@ -115,7 +94,7 @@ export default async function RegistryPage({
             <StageBadge stage={stage} />
           </div>
           <p className="text-sm text-muted-foreground mt-1">
-            {engagement.companyName} · Assign and lock a governance posture for each agent
+            {engagement.companyName} · Decision Governance Review records
           </p>
         </div>
 
@@ -148,42 +127,26 @@ export default async function RegistryPage({
       {/* Summary stats */}
       <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 border rounded-lg px-5 py-4 bg-muted/20">
         <div>
-          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
-            Agents
-          </p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Agents</p>
           <p className="text-xl font-semibold mt-0.5">{totalWorkflows}</p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
-            Assigned
-          </p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">DGR Complete</p>
           <p className="text-xl font-semibold mt-0.5">
-            {assignedCount}
-            <span className="text-sm font-normal text-muted-foreground">
-              /{totalWorkflows}
-            </span>
+            {completeCount}
+            <span className="text-sm font-normal text-muted-foreground">/{totalWorkflows}</span>
           </p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
-            Locked
-          </p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Keep / Downsize</p>
           <p className="text-xl font-semibold mt-0.5">
-            {lockedCount}
-            <span className="text-sm font-normal text-muted-foreground">
-              /{totalWorkflows}
-            </span>
+            {(dispositionCounts["KEEP"] ?? 0) + (dispositionCounts["DOWNSIZE"] ?? 0)}
           </p>
         </div>
         <div>
-          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">
-            Est. Savings
-          </p>
+          <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Replace / Kill</p>
           <p className="text-xl font-semibold mt-0.5">
-            {totalSavings > 0 ? fmt(totalSavings) : "—"}
-            {totalSavings > 0 && (
-              <span className="text-sm font-normal text-muted-foreground">/yr</span>
-            )}
+            {(dispositionCounts["REPLACE"] ?? 0) + (dispositionCounts["KILL"] ?? 0)}
           </p>
         </div>
       </div>

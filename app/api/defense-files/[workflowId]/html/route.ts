@@ -1,30 +1,33 @@
 import { auth } from "@clerk/nextjs/server";
 import { getDefenseFileWithFullData, getOrCreateDefenseFile } from "@/lib/defense-files";
-import type { RiskEntry } from "@/db/schema";
 import { NextResponse } from "next/server";
 
-const VERDICT_COLORS: Record<string, string> = {
+const DISPOSITION_COLORS: Record<string, string> = {
   KEEP: "#065f46",
   DOWNSIZE: "#92400e",
   REPLACE: "#9a3412",
   KILL: "#7f1d1d",
 };
 
-const VERDICT_BG: Record<string, string> = {
+const DISPOSITION_BG: Record<string, string> = {
   KEEP: "#d1fae5",
   DOWNSIZE: "#fef3c7",
   REPLACE: "#ffedd5",
   KILL: "#fee2e2",
 };
 
-function fmt(n: number | null | undefined, decimals = 0): string {
-  if (n == null) return "—";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: decimals,
-  }).format(n);
-}
+const AUTHORITY_LABELS: Record<string, string> = {
+  AUTO: "Automatic",
+  REVIEW: "Review required",
+  ESCALATE: "Escalation required",
+  DENY: "Denied",
+};
+
+const SUITABILITY_LABELS: Record<string, string> = {
+  SUITABLE: "Suitable",
+  PREREQUISITES_REQUIRED: "Prerequisites required",
+  NOT_SUITABLE: "Not suitable",
+};
 
 function fmtDate(d: Date | null | undefined): string {
   if (!d) return "—";
@@ -46,55 +49,99 @@ export async function GET(
   const data = await getDefenseFileWithFullData(workflowId);
   if (!data) return NextResponse.json({ error: "Not found" }, { status: 404 });
 
-  const df = data.defenseFile;
+  const df = data.defenseFile ?? (await getOrCreateDefenseFile(workflowId));
   const inv = data.investigation;
-  const vrd = data.governancePosture;
   const eng = data.engagement;
-  const costPerCall = data.costPerCallUsd ? parseFloat(data.costPerCallUsd) : null;
-  const monthly = costPerCall && data.monthlyCallVolume ? costPerCall * data.monthlyCallVolume : null;
-  const risks = (inv?.q5Risks ?? []) as RiskEntry[];
+  const disposition = inv?.disposition ?? null;
 
-  const verdictColor = vrd ? (VERDICT_COLORS[vrd.posture] ?? "#111") : "#111";
-  const verdictBg = vrd ? (VERDICT_BG[vrd.posture] ?? "#f3f4f6") : "#f3f4f6";
+  const dispositionColor = disposition ? (DISPOSITION_COLORS[disposition] ?? "#111") : "#111";
+  const dispositionBg = disposition ? (DISPOSITION_BG[disposition] ?? "#f3f4f6") : "#f3f4f6";
 
-  const risksTable = risks.length
-    ? `<table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;">
-        <thead><tr style="background:#f9fafb;">
-          <th style="text-align:left;padding:8px 10px;border:1px solid #e5e7eb;">Description</th>
-          <th style="text-align:left;padding:8px 10px;border:1px solid #e5e7eb;">Category</th>
-          <th style="text-align:left;padding:8px 10px;border:1px solid #e5e7eb;">Severity</th>
-          <th style="text-align:left;padding:8px 10px;border:1px solid #e5e7eb;">Owner</th>
-        </tr></thead>
-        <tbody>${risks.map((r, i) => `
-          <tr style="background:${i % 2 === 0 ? "#fff" : "#f9fafb"};">
-            <td style="padding:8px 10px;border:1px solid #e5e7eb;">${r.description}</td>
-            <td style="padding:8px 10px;border:1px solid #e5e7eb;">${r.category}</td>
-            <td style="padding:8px 10px;border:1px solid #e5e7eb;">${r.severity}</td>
-            <td style="padding:8px 10px;border:1px solid #e5e7eb;">${r.requiredReviewerName}<br/><span style="color:#6b7280;font-size:11px;">${r.requiredReviewerTitle}</span></td>
-          </tr>`).join("")}
-        </tbody>
-      </table>`
-    : `<p style="color:#6b7280;font-size:13px;">No risks recorded.</p>`;
+  // ── Execution Class Authority Matrix ────────────────────────────────────────
+  const classes = inv?.executionClasses ?? [];
+  const classRows = classes
+    .map((ec, i) => {
+      const auth = ec.authority;
+      const levelLabel = auth ? (AUTHORITY_LABELS[auth.authorityLevel] ?? auth.authorityLevel) : "—";
+      const holderText =
+        auth?.currentHolderName
+          ? `${auth.currentHolderName}${auth.currentHolderTitle ? `, ${auth.currentHolderTitle}` : ""}`
+          : auth?.authorityBasis
+            ? `Basis: ${auth.authorityBasis}`
+            : "—";
+      const validBadge =
+        ec.validationStatus === "VALIDATED"
+          ? `<span style="background:#d1fae5;color:#065f46;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">Validated</span>`
+          : `<span style="background:#fee2e2;color:#7f1d1d;padding:2px 8px;border-radius:9999px;font-size:11px;font-weight:600;">Not validated</span>`;
+      return `
+        <tr style="background:${i % 2 === 0 ? "#fff" : "#f9fafb"};">
+          <td style="padding:10px;border:1px solid #e5e7eb;vertical-align:top;">
+            <div style="font-weight:500;font-size:13px;">${ec.action}</div>
+            <div style="color:#6b7280;font-size:12px;margin-top:2px;">Target: ${ec.target}</div>
+            <div style="color:#6b7280;font-size:12px;">Scope: ${ec.scope}</div>
+          </td>
+          <td style="padding:10px;border:1px solid #e5e7eb;font-size:13px;vertical-align:top;">${levelLabel}</td>
+          <td style="padding:10px;border:1px solid #e5e7eb;font-size:13px;vertical-align:top;">${holderText}</td>
+          <td style="padding:10px;border:1px solid #e5e7eb;font-size:12px;vertical-align:top;color:#374151;">${auth?.runtimeSignal ?? "—"}</td>
+          <td style="padding:10px;border:1px solid #e5e7eb;vertical-align:top;">${validBadge}</td>
+        </tr>`;
+    })
+    .join("");
 
+  const classMatrix =
+    classes.length > 0
+      ? `<table style="width:100%;border-collapse:collapse;font-size:13px;margin-top:8px;">
+          <thead><tr style="background:#f9fafb;">
+            <th style="text-align:left;padding:8px 10px;border:1px solid #e5e7eb;">Execution Class</th>
+            <th style="text-align:left;padding:8px 10px;border:1px solid #e5e7eb;">Authority Level</th>
+            <th style="text-align:left;padding:8px 10px;border:1px solid #e5e7eb;">Authority Holder / Basis</th>
+            <th style="text-align:left;padding:8px 10px;border:1px solid #e5e7eb;">Runtime Signal</th>
+            <th style="text-align:left;padding:8px 10px;border:1px solid #e5e7eb;">Validation</th>
+          </tr></thead>
+          <tbody>${classRows}</tbody>
+        </table>
+        <p style="font-size:12px;color:#6b7280;margin-top:8px;font-style:italic;">Default rule: any execution class not listed above is DENIED.</p>`
+      : `<p style="color:#6b7280;font-size:13px;">No execution classes declared.</p>`;
+
+  // ── Enforcement Boundary ─────────────────────────────────────────────────────
+  const boundary = inv?.enforcementBoundary;
+  const suitabilityLabel = boundary
+    ? (SUITABILITY_LABELS[boundary.dalxSuitability] ?? boundary.dalxSuitability)
+    : null;
+  const boundarySection = boundary
+    ? `<table style="font-size:13px;width:100%;">
+        ${row("Execution path", boundary.executionPath)}
+        ${row("Bypass paths", boundary.bypassPaths ?? "None identified")}
+        ${row("Required boundary", boundary.requiredBoundary)}
+        ${row("DAL-X suitability", suitabilityLabel)}
+        ${row("Integration point", boundary.integrationPoint)}
+        ${row("Downstream validation", boundary.downstreamValidationPoint)}
+        ${boundary.blocker ? row("Blocker", boundary.blocker) : ""}
+        ${boundary.sponsorDecision ? row("Sponsor decision", boundary.sponsorDecision) : ""}
+      </table>
+      ${boundary.requiredExecutionInfo ? `<div style="margin-top:10px;font-size:13px;"><strong>Required execution info:</strong> ${boundary.requiredExecutionInfo}</div>` : ""}`
+    : `<p style="color:#6b7280;font-size:13px;">Enforcement boundary analysis not completed.</p>`;
+
+  // ── Signature section ────────────────────────────────────────────────────────
   const signatureSection = df?.signedAt
     ? `<div style="margin-top:32px;border:1px solid #e5e7eb;border-radius:8px;padding:20px;">
         <p style="font-size:11px;letter-spacing:.08em;text-transform:uppercase;color:#6b7280;margin:0 0 12px;">Signature Record</p>
         <table style="font-size:13px;">
           ${row("Status", df.status === "OVERRIDDEN" ? "Departure recorded" : "Accepted")}
-          ${df.status === "OVERRIDDEN" ? `
-            ${row("Sponsor name", df.sponsorOverrideName)}
-            ${row("Override verdict", df.sponsorOverridePosture ?? "—")}
-            ${row("Override rationale", df.sponsorOverrideRationale)}
-            ${row("Recorded at", fmtDate(df.sponsorOverrideAt))}
-          ` : `
-            ${row("Signed at", fmtDate(df.signedAt))}
-            ${row("IP address", df.signedByIp)}
-          `}
+          ${
+            df.status === "OVERRIDDEN"
+              ? `${row("Sponsor name", df.sponsorOverrideName)}
+                 ${row("Override disposition", df.sponsorOverridePosture ?? "—")}
+                 ${row("Override rationale", df.sponsorOverrideRationale)}
+                 ${row("Recorded at", fmtDate(df.sponsorOverrideAt))}`
+              : `${row("Signed at", fmtDate(df.signedAt))}
+                 ${row("IP address", df.signedByIp)}`
+          }
         </table>
       </div>`
     : `<div style="margin-top:32px;border:1px dashed #d1d5db;border-radius:8px;padding:20px;text-align:center;color:#6b7280;">
         <p style="margin:0;font-size:13px;">Awaiting sponsor signature</p>
-        ${inv?.q1SponsorName ? `<p style="margin:4px 0 0;font-size:12px;">${inv.q1SponsorName} · ${inv.q1SponsorEmail ?? ""}</p>` : ""}
+        ${inv?.sponsorName ? `<p style="margin:4px 0 0;font-size:12px;">${inv.sponsorName}${inv.sponsorEmail ? ` · ${inv.sponsorEmail}` : ""}</p>` : ""}
       </div>`;
 
   const html = `<!DOCTYPE html>
@@ -105,12 +152,11 @@ export async function GET(
   <title>Decision Defense File — ${data.name}</title>
   <style>
     *{box-sizing:border-box;}
-    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#111;max-width:800px;margin:0 auto;padding:48px 40px;line-height:1.5;}
+    body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#111;max-width:900px;margin:0 auto;padding:48px 40px;line-height:1.5;}
     h1{font-size:22px;font-weight:600;margin:0;}
     h2{font-size:13px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:#6b7280;margin:32px 0 10px;}
     p{margin:0 0 8px;}
     .section{margin-bottom:28px;border:1px solid #e5e7eb;border-radius:8px;padding:20px;}
-    .verdict-pill{display:inline-block;padding:4px 12px;border-radius:9999px;font-size:13px;font-weight:600;background:${verdictBg};color:${verdictColor};}
     .no-print{background:#111;color:#fff;border:none;padding:10px 20px;border-radius:6px;font-size:14px;cursor:pointer;margin-bottom:32px;}
     @media print{.no-print{display:none;}body{padding:24px;}}
   </style>
@@ -135,71 +181,43 @@ export async function GET(
     <p style="color:#6b7280;margin:4px 0 0;font-size:14px;">${data.businessOutcome}</p>
   </div>
 
-  ${vrd ? `
-  <div style="margin-bottom:32px;padding:20px;border-radius:8px;background:${verdictBg};border:1px solid ${verdictColor}40;">
-    <p style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:${verdictColor};margin:0 0 8px;font-weight:600;">Assigned Verdict</p>
-    <div style="display:flex;align-items:center;gap:12px;flex-wrap:wrap;">
-      <span class="verdict-pill">${vrd.posture}</span>
-      ${vrd.estimatedAnnualSavingsUsd ? `<span style="font-size:13px;color:${verdictColor};">Est. savings: ${fmt(parseFloat(vrd.estimatedAnnualSavingsUsd))}/yr</span>` : ""}
-    </div>
-    <p style="margin:12px 0 0;font-size:13px;">${vrd.reason}</p>
-    ${vrd.conditionForChange ? `<p style="margin:8px 0 0;font-size:12px;color:#6b7280;"><strong>Condition for change:</strong> ${vrd.conditionForChange}</p>` : ""}
-  </div>` : ""}
+  ${
+    disposition
+      ? `<div style="margin-bottom:32px;padding:20px;border-radius:8px;background:${dispositionBg};border:1px solid ${dispositionColor}40;">
+          <p style="font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:${dispositionColor};margin:0 0 8px;font-weight:600;">Workflow Disposition</p>
+          <span style="display:inline-block;padding:4px 12px;border-radius:9999px;font-size:13px;font-weight:600;background:${dispositionBg};color:${dispositionColor};">${disposition}</span>
+          ${inv?.dispositionReasoning ? `<p style="margin:12px 0 0;font-size:13px;">${inv.dispositionReasoning}</p>` : ""}
+        </div>`
+      : ""
+  }
 
-  <h2>Q1 — Executive Sponsor &amp; Business Requirement</h2>
+  <h2>Defense File Sponsor</h2>
   <div class="section">
     <table style="font-size:13px;width:100%;">
-      ${row("Sponsor", inv?.q1SponsorName)}
-      ${row("Title", inv?.q1SponsorTitle)}
-      ${row("Email", inv?.q1SponsorEmail)}
-      ${row("Authorized", fmtDate(inv?.q1AuthorizedAt))}
+      ${row("Name", inv?.sponsorName)}
+      ${row("Title", inv?.sponsorTitle)}
+      ${row("Email", inv?.sponsorEmail)}
     </table>
-    ${inv?.q1BusinessRequirement ? `<div style="margin-top:12px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:13px;"><strong>Business requirement:</strong> ${inv.q1BusinessRequirement}</div>` : ""}
   </div>
 
-  <h2>Q2 — Evidence Assessment</h2>
+  <h2>Execution Class Authority Matrix</h2>
+  <div class="section">
+    ${classMatrix}
+  </div>
+
+  <h2>Enforcement Boundary</h2>
+  <div class="section">
+    ${boundarySection}
+  </div>
+
+  <h2>Business Value</h2>
   <div class="section">
     <table style="font-size:13px;">
-      ${row("Evidence type", inv?.q2EvidenceType)}
-      ${row("Evidence strength", inv?.q2EvidenceStrength)}
+      ${row("Cost per call", inv?.costPerCallUsd ? `$${parseFloat(inv.costPerCallUsd).toFixed(4)}` : null)}
+      ${row("Monthly volume", inv?.monthlyVolume?.toLocaleString() ?? null)}
     </table>
-    ${inv?.q2EvidenceDescription ? `<div style="margin-top:12px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:13px;">${inv.q2EvidenceDescription}</div>` : ""}
-  </div>
-
-  <h2>Q3 — Cost Baseline</h2>
-  <div class="section">
-    <table style="font-size:13px;">
-      ${row("Cost per call", costPerCall != null ? fmt(costPerCall, 4) : null)}
-      ${row("Monthly volume", data.monthlyCallVolume?.toLocaleString() ?? null)}
-      ${row("Monthly total", monthly != null ? fmt(monthly) : null)}
-      ${row("Annual total", monthly != null ? fmt(monthly * 12) : null)}
-    </table>
-    ${inv?.q3ManualOverrideNote ? `<div style="margin-top:12px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:13px;color:#6b7280;"><strong>Manual override note:</strong> ${inv.q3ManualOverrideNote}</div>` : ""}
-  </div>
-
-  <h2>Q4 — Alternative Mechanism</h2>
-  <div class="section">
-    <table style="font-size:13px;">
-      ${row("Alternative type", inv?.q4AlternativeType?.replace(/_/g, " "))}
-      ${row("Feasibility", inv?.q4Feasibility)}
-      ${row("Est. cost per call", inv?.q4EstimatedCostPerCallUsd ? fmt(parseFloat(inv.q4EstimatedCostPerCallUsd), 4) : null)}
-    </table>
-    ${inv?.q4AlternativeDescription ? `<div style="margin-top:12px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:13px;">${inv.q4AlternativeDescription}</div>` : ""}
-  </div>
-
-  <h2>Q5 — Risk Register</h2>
-  <div class="section">
-    ${risksTable}
-  </div>
-
-  <h2>Q6 — Verdict Recommendation</h2>
-  <div class="section">
-    <table style="font-size:13px;">
-      ${row("Recommended verdict", inv?.q6RecommendedPosture)}
-      ${row("Analyst decision", inv?.q6AnalystAccepted ? "Accepted" : inv?.q6AnalystAccepted === false ? "Departure recorded" : "Pending")}
-    </table>
-    ${inv?.q6ReasoningChain ? `<div style="margin-top:12px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:13px;">${inv.q6ReasoningChain}</div>` : ""}
-    ${inv?.q6AnalystOverrideNote ? `<div style="margin-top:8px;font-size:13px;color:#6b7280;"><strong>Override note:</strong> ${inv.q6AnalystOverrideNote}</div>` : ""}
+    ${inv?.riskNote ? `<div style="margin-top:12px;padding-top:12px;border-top:1px solid #e5e7eb;font-size:13px;"><strong>Risk conditions:</strong> ${inv.riskNote}</div>` : ""}
+    ${inv?.alternativeNote ? `<div style="margin-top:8px;font-size:13px;"><strong>Alternative mechanism:</strong> ${inv.alternativeNote}</div>` : ""}
   </div>
 
   ${signatureSection}

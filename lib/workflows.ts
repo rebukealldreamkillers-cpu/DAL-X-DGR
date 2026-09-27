@@ -6,14 +6,14 @@ export async function getWorkflowsForEngagement(engagementId: string) {
   return db.query.registeredAgents.findMany({
     where: and(eq(registeredAgents.engagementId, engagementId), isNull(registeredAgents.deletedAt)),
     orderBy: [asc(registeredAgents.sortOrder)],
-    with: { investigation: true, governancePosture: true, defenseFile: true },
+    with: { investigation: true, defenseFile: true },
   });
 }
 
 export async function getWorkflow(id: string) {
   return db.query.registeredAgents.findFirst({
     where: and(eq(registeredAgents.id, id), isNull(registeredAgents.deletedAt)),
-    with: { engagement: true, investigation: true, governancePosture: true, defenseFile: true },
+    with: { engagement: true, investigation: true, defenseFile: true },
   });
 }
 

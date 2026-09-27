@@ -64,9 +64,8 @@ export default async function EngagementsPage() {
               {engagements.map((engagement) => {
                 const actions = pendingActions(engagement as Parameters<typeof pendingActions>[0]);
                 const agentCount = engagement.registeredAgents?.length ?? 0;
-                const postureCount = engagement.registeredAgents?.filter((w) => w.governancePosture).length ?? 0;
-                const lockedCount = engagement.registeredAgents?.filter(
-                  (w) => w.governancePosture?.lockStatus === "LOCKED",
+                const dgrCompleteCount = engagement.registeredAgents?.filter(
+                  (w) => w.investigation?.completedAt,
                 ).length ?? 0;
                 const latestManifest = engagement.governanceManifests?.[0];
                 const manifestCfg = latestManifest
@@ -87,7 +86,7 @@ export default async function EngagementsPage() {
                     <TableCell>
                       <span className="text-sm">
                         {agentCount > 0
-                          ? <>{lockedCount}<span className="text-muted-foreground">/{agentCount} locked</span></>
+                          ? <>{dgrCompleteCount}<span className="text-muted-foreground">/{agentCount} DGR done</span></>
                           : <span className="text-muted-foreground">—</span>}
                       </span>
                     </TableCell>

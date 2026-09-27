@@ -3,10 +3,9 @@ import { getEngagement } from "@/lib/engagements";
 import { getLatestManifest, getManifests } from "@/lib/manifests";
 import { ManifestGenerateButton } from "@/components/manifests/manifest-generate-button";
 import { ManifestSignButton } from "@/components/manifests/manifest-sign-button";
-import { PostureBadge } from "@/components/engagements/verdict-badge";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { ChevronRight, Download, Shield } from "lucide-react";
+import { ChevronRight, Download, Shield, CheckCircle2, Circle } from "lucide-react";
 import Link from "next/link";
 import type { ManifestJson, ManifestAgentEntry } from "@/lib/manifests";
 
@@ -18,14 +17,12 @@ const MANIFEST_STATUS_CONFIG: Record<string, { label: string; class: string }> =
   SUPERSEDED: { label: "Superseded", class: "bg-muted text-muted-foreground border-border" },
 };
 
-function fmt(n: number | null | undefined): string {
-  if (!n) return "—";
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    maximumFractionDigits: 0,
-  }).format(n);
-}
+const DISPOSITION_STYLES: Record<string, { border: string; bg: string; text: string }> = {
+  KEEP: { border: "border-emerald-400", bg: "bg-emerald-50", text: "text-emerald-800" },
+  DOWNSIZE: { border: "border-amber-400", bg: "bg-amber-50", text: "text-amber-800" },
+  REPLACE: { border: "border-orange-400", bg: "bg-orange-50", text: "text-orange-800" },
+  KILL: { border: "border-red-400", bg: "bg-red-50", text: "text-red-800" },
+};
 
 export default async function ManifestPage({
   params,
@@ -44,7 +41,7 @@ export default async function ManifestPage({
         <div className="border rounded-lg p-10 text-center text-muted-foreground">
           <p className="text-sm font-medium">Manifest not yet available</p>
           <p className="text-xs mt-1">
-            Advance to the Registry stage and lock at least one governance posture to generate a manifest.
+            Advance to the Registry stage and complete at least one Decision Governance Review to generate a manifest.
           </p>
         </div>
       </div>
@@ -119,40 +116,35 @@ export default async function ManifestPage({
       {!latest ? (
         <div className="border rounded-lg p-10 text-center text-muted-foreground">
           <p className="text-sm">No manifest generated yet.</p>
-          <p className="text-xs mt-1">Click "Generate manifest" to produce the initial DAL-X policy configuration.</p>
+          <p className="text-xs mt-1">Click &quot;Generate manifest&quot; to produce the initial DAL-X policy configuration.</p>
         </div>
       ) : (
         <>
           {/* Summary */}
           {manifestJson?.summary && (
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 border rounded-lg px-5 py-4 bg-muted/20">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 border rounded-lg px-5 py-4 bg-muted/20">
               <div>
                 <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Agents</p>
                 <p className="text-xl font-semibold mt-0.5">{manifestJson.summary.totalAgents}</p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Locked</p>
-                <p className="text-xl font-semibold mt-0.5">{manifestJson.summary.totalLockedPostures}</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Enforcement Ready</p>
+                <p className="text-xl font-semibold mt-0.5">
+                  {manifestJson.summary.enforcementReadyCount}
+                  <span className="text-sm font-normal text-muted-foreground">/{manifestJson.summary.totalAgents}</span>
+                </p>
               </div>
               <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Postures</p>
+                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Disposition</p>
                 <div className="flex flex-wrap gap-1 mt-1">
-                  {Object.entries(manifestJson.summary.postureBreakdown)
+                  {Object.entries(manifestJson.summary.dispositionBreakdown)
                     .filter(([, count]) => count > 0)
-                    .map(([posture, count]) => (
-                      <span key={posture} className="text-xs text-muted-foreground">
-                        {posture}: {count}
+                    .map(([disposition, count]) => (
+                      <span key={disposition} className="text-xs text-muted-foreground">
+                        {disposition}: {count}
                       </span>
                     ))}
                 </div>
-              </div>
-              <div>
-                <p className="text-xs text-muted-foreground uppercase tracking-wide font-medium">Est. Savings</p>
-                <p className="text-xl font-semibold mt-0.5">
-                  {manifestJson.summary.estimatedAnnualSavingsUsd > 0
-                    ? fmt(manifestJson.summary.estimatedAnnualSavingsUsd)
-                    : "—"}
-                </p>
               </div>
             </div>
           )}
@@ -166,137 +158,153 @@ export default async function ManifestPage({
                 Agent governance entries
               </h2>
               <div className="border rounded-lg divide-y">
-                {manifestJson.agents.map((agent: ManifestAgentEntry, idx: number) => (
-                  <div key={agent.agentId} className="p-5 space-y-4">
-                    {/* Agent header */}
-                    <div className="flex items-start gap-3">
-                      <span className="text-xs font-mono text-muted-foreground mt-0.5">
-                        {String(idx + 1).padStart(2, "0")}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center gap-2 flex-wrap">
-                          <p className="text-sm font-medium">{agent.name}</p>
-                          {agent.governancePosture && (
-                            <PostureBadge
-                              posture={agent.governancePosture.posture as "KEEP" | "DOWNSIZE" | "REPLACE" | "KILL"}
-                            />
-                          )}
-                          {agent.governancePosture?.lockStatus === "LOCKED" && (
-                            <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-emerald-700 border-emerald-200 bg-emerald-50">
-                              locked
-                            </Badge>
-                          )}
+                {manifestJson.agents.map((agent: ManifestAgentEntry, idx: number) => {
+                  const dispStyle = agent.disposition ? DISPOSITION_STYLES[agent.disposition] : null;
+                  return (
+                    <div key={agent.agentId} className="p-5 space-y-4">
+                      {/* Agent header */}
+                      <div className="flex items-start gap-3">
+                        <span className="text-xs font-mono text-muted-foreground mt-0.5">
+                          {String(idx + 1).padStart(2, "0")}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {agent.enforcementReady ? (
+                              <CheckCircle2 className="w-4 h-4 text-emerald-600 flex-shrink-0" />
+                            ) : (
+                              <Circle className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                            )}
+                            <p className="text-sm font-medium">{agent.name}</p>
+                            {dispStyle && agent.disposition && (
+                              <span
+                                className={`inline-block px-2 py-0.5 rounded text-xs font-medium border ${dispStyle.border} ${dispStyle.bg} ${dispStyle.text}`}
+                              >
+                                {agent.disposition}
+                              </span>
+                            )}
+                            {agent.enforcementReady && (
+                              <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-emerald-700 border-emerald-200 bg-emerald-50">
+                                enforcement ready
+                              </Badge>
+                            )}
+                          </div>
+                          <p className="text-xs text-muted-foreground mt-0.5">{agent.businessOutcome}</p>
                         </div>
-                        <p className="text-xs text-muted-foreground mt-0.5">{agent.businessOutcome}</p>
                       </div>
-                    </div>
 
-                    {/* DAL-X enforcement action */}
-                    {agent.governancePosture?.dalxEnforcementPosture && (
+                      {/* Default execution rule */}
                       <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 space-y-1">
                         <div className="flex items-center gap-1.5">
                           <Shield className="w-3 h-3 text-slate-500" />
                           <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                            DAL-X enforcement action
+                            Default execution rule
                           </p>
                         </div>
-                        <p className="text-xs text-slate-700 leading-relaxed">
-                          {agent.governancePosture.dalxEnforcementPosture}
+                        <p className="text-xs text-slate-700">
+                          {agent.defaultExecutionRule} — any execution class not listed in the authority matrix is denied
                         </p>
                       </div>
-                    )}
 
-                    {/* Details grid */}
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
-                      {/* Authority chain */}
-                      {agent.authorityChain.sponsorName && (
-                        <div className="space-y-0.5">
-                          <p className="font-medium text-muted-foreground uppercase tracking-wide text-[10px]">
-                            Authority chain
+                      {/* Execution classes */}
+                      {agent.executionClasses.length > 0 && (
+                        <div className="space-y-2">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                            Execution classes ({agent.executionClasses.length})
                           </p>
-                          <p>{agent.authorityChain.sponsorName}</p>
-                          <p className="text-muted-foreground">
-                            {agent.authorityChain.sponsorTitle} · {agent.authorityChain.sponsorEmail}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Cost boundaries */}
-                      {(agent.costBoundaries.monthlyTotalUsd || agent.costBoundaries.interceptionThresholdUsd) && (
-                        <div className="space-y-0.5">
-                          <p className="font-medium text-muted-foreground uppercase tracking-wide text-[10px]">
-                            Cost boundaries
-                          </p>
-                          {agent.costBoundaries.monthlyTotalUsd && (
-                            <p>Monthly: {fmt(agent.costBoundaries.monthlyTotalUsd)}</p>
-                          )}
-                          {agent.costBoundaries.interceptionThresholdUsd && (
-                            <p className="text-muted-foreground">
-                              Intercept at: {fmt(agent.costBoundaries.interceptionThresholdUsd)}/call
-                            </p>
-                          )}
-                          {agent.costBoundaries.escalationThresholdUsd && (
-                            <p className="text-muted-foreground">
-                              Escalate at: {fmt(agent.costBoundaries.escalationThresholdUsd)}/mo
-                            </p>
-                          )}
-                        </div>
-                      )}
-
-                      {/* Governance reason */}
-                      {agent.governancePosture?.reason && (
-                        <div className="sm:col-span-2 space-y-0.5">
-                          <p className="font-medium text-muted-foreground uppercase tracking-wide text-[10px]">
-                            Governance rationale
-                          </p>
-                          <p className="text-muted-foreground leading-relaxed">{agent.governancePosture.reason}</p>
-                        </div>
-                      )}
-
-                      {/* Condition for change */}
-                      {agent.governancePosture?.conditionForChange && (
-                        <div className="sm:col-span-2 space-y-0.5">
-                          <p className="font-medium text-muted-foreground uppercase tracking-wide text-[10px]">
-                            Condition for change
-                          </p>
-                          <p className="text-muted-foreground leading-relaxed">
-                            {agent.governancePosture.conditionForChange}
-                          </p>
-                        </div>
-                      )}
-
-                      {/* Risk conditions */}
-                      {agent.riskConditions.length > 0 && (
-                        <div className="sm:col-span-2 space-y-1">
-                          <p className="font-medium text-muted-foreground uppercase tracking-wide text-[10px]">
-                            Risk conditions ({agent.riskConditions.length})
-                          </p>
-                          <div className="space-y-1.5">
-                            {agent.riskConditions.map((risk) => (
-                              <div
-                                key={risk.id}
-                                className="border rounded px-3 py-2 bg-background space-y-0.5"
-                              >
-                                <div className="flex items-center gap-2">
-                                  <Badge variant="outline" className="text-[9px] h-3.5 px-1">
-                                    {risk.severity}
-                                  </Badge>
-                                  <p className="text-xs font-medium">{risk.description}</p>
+                          <div className="border rounded-lg divide-y text-xs overflow-hidden">
+                            {agent.executionClasses.map((ec) => (
+                              <div key={ec.id} className="px-3 py-2.5 space-y-1">
+                                <div className="flex items-center gap-2 flex-wrap">
+                                  <span className="font-medium">{ec.action}</span>
+                                  <span className="text-muted-foreground">→ {ec.target}</span>
+                                  {ec.authority && (
+                                    <span
+                                      className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+                                        ec.authority.level === "AUTO"
+                                          ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                                          : ec.authority.level === "REVIEW"
+                                            ? "border-blue-300 bg-blue-50 text-blue-700"
+                                            : ec.authority.level === "ESCALATE"
+                                              ? "border-amber-300 bg-amber-50 text-amber-700"
+                                              : "border-red-300 bg-red-50 text-red-700"
+                                      }`}
+                                    >
+                                      {ec.authority.level}
+                                    </span>
+                                  )}
+                                  <span
+                                    className={`text-[10px] ${ec.validationStatus === "VALIDATED" ? "text-emerald-700" : "text-amber-700"}`}
+                                  >
+                                    {ec.validationStatus === "VALIDATED" ? "validated" : "not validated"}
+                                  </span>
                                 </div>
-                                <p className="text-muted-foreground text-[11px]">
-                                  Trigger: {risk.escalationTrigger}
-                                </p>
-                                <p className="text-muted-foreground text-[11px]">
-                                  Reviewer: {risk.requiredReviewerName} · {risk.requiredReviewerTitle}
-                                </p>
+                                <p className="text-muted-foreground line-clamp-1">{ec.scope}</p>
+                                {ec.authority && (
+                                  <p className="text-muted-foreground">
+                                    {ec.authority.role}
+                                    {ec.authority.holderName ? ` · ${ec.authority.holderName}` : ""}
+                                  </p>
+                                )}
+                                {ec.authority?.runtimeSignal && (
+                                  <p className="text-muted-foreground font-mono text-[10px]">
+                                    Signal: {ec.authority.runtimeSignal}
+                                  </p>
+                                )}
                               </div>
                             ))}
                           </div>
                         </div>
                       )}
+
+                      {/* Enforcement boundary */}
+                      {agent.enforcementBoundary && (
+                        <div className="space-y-1.5 text-xs">
+                          <p className="font-medium text-muted-foreground uppercase tracking-wide text-[10px]">
+                            Enforcement boundary
+                          </p>
+                          <p>
+                            <span className="text-muted-foreground">Boundary: </span>
+                            {agent.enforcementBoundary.requiredBoundary}
+                          </p>
+                          <p>
+                            <span className="text-muted-foreground">DAL-X suitability: </span>
+                            {agent.enforcementBoundary.dalxSuitability}
+                          </p>
+                          {agent.enforcementBoundary.integrationPoint && (
+                            <p>
+                              <span className="text-muted-foreground">Integration: </span>
+                              {agent.enforcementBoundary.integrationPoint}
+                            </p>
+                          )}
+                        </div>
+                      )}
+
+                      {/* Enforcement blockers */}
+                      {agent.enforcementReadyBlockers.length > 0 && (
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide text-[10px]">
+                            Enforcement blockers
+                          </p>
+                          <ul className="text-xs text-amber-700 space-y-0.5 list-disc list-inside">
+                            {agent.enforcementReadyBlockers.map((b, i) => (
+                              <li key={i}>{b}</li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      {/* Disposition reasoning */}
+                      {agent.dispositionReasoning && (
+                        <div className="space-y-1">
+                          <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide text-[10px]">
+                            Disposition reasoning
+                          </p>
+                          <p className="text-xs text-muted-foreground leading-relaxed">{agent.dispositionReasoning}</p>
+                        </div>
+                      )}
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           )}

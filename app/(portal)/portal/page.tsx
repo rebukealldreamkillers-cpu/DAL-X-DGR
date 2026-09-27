@@ -4,7 +4,6 @@ import { db } from "@/db";
 import { engagements, registeredAgents } from "@/db/schema";
 import { isNull } from "drizzle-orm";
 import { StageBadge } from "@/components/engagements/stage-badge";
-import { PostureBadge } from "@/components/engagements/verdict-badge";
 import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 
@@ -23,7 +22,6 @@ export default async function PortalHomePage() {
       registeredAgents: {
         where: isNull(registeredAgents.deletedAt),
         with: {
-          governancePosture: true,
           investigation: true,
         },
       },
@@ -35,7 +33,7 @@ export default async function PortalHomePage() {
       userEmail &&
       (e.contactEmail.toLowerCase() === userEmail ||
         e.registeredAgents.some(
-          (w) => w.investigation?.q1SponsorEmail?.toLowerCase() === userEmail,
+          (w) => w.investigation?.sponsorEmail?.toLowerCase() === userEmail,
         )),
   );
 
@@ -69,13 +67,9 @@ export default async function PortalHomePage() {
             | "DEFENSE_FILES"
             | "CLOSED";
           const total = engagement.registeredAgents.length;
-          const postureCounts: Record<string, number> = {};
-          for (const w of engagement.registeredAgents) {
-            if (w.governancePosture) {
-              postureCounts[w.governancePosture.posture] =
-                (postureCounts[w.governancePosture.posture] ?? 0) + 1;
-            }
-          }
+          const completeCount = engagement.registeredAgents.filter(
+            (w) => w.investigation?.completedAt,
+          ).length;
 
           return (
             <Link
@@ -90,13 +84,8 @@ export default async function PortalHomePage() {
                 </div>
                 <p className="text-xs text-muted-foreground mt-0.5">
                   {total} agent{total !== 1 ? "s" : ""}
-                  {Object.keys(postureCounts).length > 0 && (
-                    <span className="ml-2">
-                      ·{" "}
-                      {Object.entries(postureCounts)
-                        .map(([p, n]) => `${n} ${p}`)
-                        .join(", ")}
-                    </span>
+                  {completeCount > 0 && (
+                    <span className="ml-2">· {completeCount} DGR complete</span>
                   )}
                 </p>
               </div>

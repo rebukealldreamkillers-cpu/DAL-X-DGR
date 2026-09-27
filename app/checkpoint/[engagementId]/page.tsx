@@ -14,11 +14,11 @@ export default async function CheckpointPage({
   if (!engagement) notFound();
 
   const workflows = engagement.registeredAgents
-    .filter((w) => !!w.governancePosture)
+    .filter((w) => !!w.investigation?.completedAt)
     .map((w) => ({
       id: w.id,
       name: w.name,
-      verdict: w.governancePosture?.posture ?? null,
+      verdict: w.investigation?.disposition ?? null,
     }));
 
   return (

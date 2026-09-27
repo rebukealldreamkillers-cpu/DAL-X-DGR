@@ -29,8 +29,14 @@ export async function getDefenseFileByToken(token: string) {
       agent: {
         with: {
           engagement: true,
-          investigation: true,
-          governancePosture: true,
+          investigation: {
+            with: {
+              executionClasses: {
+                with: { authority: true },
+              },
+              enforcementBoundary: true,
+            },
+          },
         },
       },
     },
@@ -42,8 +48,15 @@ export async function getDefenseFileWithFullData(agentId: string) {
     where: eq(registeredAgents.id, agentId),
     with: {
       engagement: true,
-      investigation: true,
-      governancePosture: true,
+      investigation: {
+        with: {
+          executionClasses: {
+            with: { authority: true },
+            orderBy: (fields, { asc }) => [asc(fields.createdAt)],
+          },
+          enforcementBoundary: true,
+        },
+      },
       defenseFile: true,
     },
   });

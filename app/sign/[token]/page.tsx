@@ -1,10 +1,23 @@
 import { notFound } from "next/navigation";
 import { getDefenseFileByToken } from "@/lib/defense-files";
 import { SponsorSigningForm } from "@/components/defense-files/sponsor-signing-form";
-import { PostureBadge } from "@/components/engagements/verdict-badge";
 import { CheckCircle2, AlertTriangle, Shield } from "lucide-react";
 
 export const dynamic = "force-dynamic";
+
+const DISPOSITION_STYLES: Record<string, { border: string; bg: string; text: string }> = {
+  KEEP: { border: "border-emerald-400", bg: "bg-emerald-50", text: "text-emerald-800" },
+  DOWNSIZE: { border: "border-amber-400", bg: "bg-amber-50", text: "text-amber-800" },
+  REPLACE: { border: "border-orange-400", bg: "bg-orange-50", text: "text-orange-800" },
+  KILL: { border: "border-red-400", bg: "bg-red-50", text: "text-red-800" },
+};
+
+const AUTHORITY_LEVEL_STYLES: Record<string, string> = {
+  AUTO: "border-emerald-300 bg-emerald-50 text-emerald-700",
+  REVIEW: "border-blue-300 bg-blue-50 text-blue-700",
+  ESCALATE: "border-amber-300 bg-amber-50 text-amber-700",
+  DENY: "border-red-300 bg-red-50 text-red-700",
+};
 
 export default async function SignPage({
   params,
@@ -37,15 +50,7 @@ export default async function SignPage({
   const alreadySigned = !!df.signedAt;
   const wf = df.agent;
   const inv = wf.investigation;
-  const vrd = wf.governancePosture;
   const eng = wf.engagement;
-
-  const fmt = (n: number) =>
-    new Intl.NumberFormat("en-US", {
-      style: "currency",
-      currency: "USD",
-      maximumFractionDigits: 0,
-    }).format(n);
 
   if (alreadySigned) {
     return (
@@ -55,8 +60,8 @@ export default async function SignPage({
           <h1 className="text-lg font-semibold">Signed and recorded</h1>
           <p className="text-sm text-muted-foreground">
             {df.status === "OVERRIDDEN"
-              ? "Your departure from the governance posture has been recorded."
-              : "You have authorized this governance posture. The Defense File is now closed."}
+              ? "Your departure from the governance decision has been recorded."
+              : "You have authorized this governance decision. The Defense File is now closed."}
           </p>
           <p className="text-xs text-muted-foreground">
             {df.signedAt
@@ -70,6 +75,11 @@ export default async function SignPage({
       </div>
     );
   }
+
+  const disposition = inv?.disposition;
+  const dispStyle = disposition ? DISPOSITION_STYLES[disposition] : null;
+  const executionClasses = inv?.executionClasses ?? [];
+  const boundary = inv?.enforcementBoundary;
 
   return (
     <div className="min-h-screen bg-background">
@@ -92,124 +102,105 @@ export default async function SignPage({
           </p>
           <p className="text-xs text-slate-700 leading-relaxed">
             Jochanni Labs has completed the governance assessment (Act 1). Your signature
-            below authorizes the governance posture and enables DAL-X runtime enforcement
-            (Act 3). You may accept the issued posture or record a departure with rationale.
+            below authorizes the governance decision and enables DAL-X runtime enforcement
+            (Act 3). You may accept the issued decision or record a departure with rationale.
           </p>
         </div>
 
-        {/* Governance posture */}
-        {vrd && (
+        {/* Disposition */}
+        {disposition && dispStyle && (
           <div className="border rounded-lg p-5 space-y-3">
             <div className="flex items-center gap-3">
               <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                Governance posture
+                Workflow disposition
               </p>
-              <PostureBadge posture={vrd.posture as "KEEP" | "DOWNSIZE" | "REPLACE" | "KILL"} />
+              <span
+                className={`inline-block px-2 py-0.5 rounded text-xs font-medium border ${dispStyle.border} ${dispStyle.bg} ${dispStyle.text}`}
+              >
+                {disposition}
+              </span>
             </div>
-            <p className="text-sm leading-relaxed">{vrd.reason}</p>
-
-            {vrd.dalxEnforcementPosture && (
-              <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 space-y-1">
-                <div className="flex items-center gap-1.5">
-                  <Shield className="w-3 h-3 text-slate-500" />
-                  <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
-                    DAL-X enforcement action
-                  </p>
-                </div>
-                <p className="text-xs text-slate-700 leading-relaxed">
-                  {vrd.dalxEnforcementPosture}
-                </p>
-              </div>
+            {inv?.dispositionReasoning && (
+              <p className="text-sm leading-relaxed">{inv.dispositionReasoning}</p>
             )}
 
-            {vrd.conditionForChange && (
-              <div className="pt-3 border-t">
-                <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-1">
-                  Condition for change
-                </p>
-                <p className="text-sm text-muted-foreground">{vrd.conditionForChange}</p>
+            {/* Sponsor info */}
+            {inv?.sponsorName && (
+              <div className="pt-3 border-t text-xs text-muted-foreground space-y-0.5">
+                <p className="font-medium text-foreground">Defense file sponsor</p>
+                <p>{inv.sponsorName}{inv.sponsorTitle ? ` · ${inv.sponsorTitle}` : ""}</p>
+                {inv.sponsorEmail && <p>{inv.sponsorEmail}</p>}
               </div>
-            )}
-            {vrd.estimatedAnnualSavingsUsd && (
-              <p className="text-sm text-muted-foreground">
-                Est. annual savings:{" "}
-                <strong>{fmt(parseFloat(vrd.estimatedAnnualSavingsUsd))}</strong>
-              </p>
             )}
           </div>
         )}
 
-        {/* Investigation summary */}
-        {inv && (
-          <div className="border rounded-lg divide-y text-sm">
-            {inv.q1SponsorName && (
-              <div className="px-4 py-3 flex gap-4">
-                <span className="text-xs font-mono text-muted-foreground w-6 mt-0.5">Q1</span>
-                <div>
-                  <p className="font-medium">{inv.q1SponsorName}</p>
-                  <p className="text-muted-foreground text-xs">
-                    {inv.q1SponsorTitle} · {inv.q1SponsorEmail}
-                  </p>
-                  {inv.q1PermittedPurpose && (
-                    <p className="text-muted-foreground text-xs mt-1 leading-relaxed">
-                      <span className="font-medium text-foreground">Permitted purpose:</span>{" "}
-                      {inv.q1PermittedPurpose}
+        {/* Execution class authority matrix */}
+        {executionClasses.length > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-1.5">
+              <Shield className="w-4 h-4 text-muted-foreground" />
+              <p className="text-sm font-semibold">Execution Class Authority Matrix</p>
+            </div>
+            <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
+              <strong>Default rule:</strong> any execution class not listed below is DENIED at runtime.
+            </div>
+            <div className="border rounded-lg divide-y text-xs overflow-hidden">
+              {executionClasses.map((ec) => (
+                <div key={ec.id} className="px-4 py-3 space-y-1.5">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="font-medium">{ec.action}</span>
+                    <span className="text-muted-foreground">→ {ec.target}</span>
+                    {ec.authority && (
+                      <span
+                        className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
+                          AUTHORITY_LEVEL_STYLES[ec.authority.authorityLevel] ?? ""
+                        }`}
+                      >
+                        {ec.authority.authorityLevel}
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-muted-foreground">{ec.scope}</p>
+                  {ec.authority && (
+                    <p className="text-muted-foreground">
+                      {ec.authority.authorityRole}
+                      {ec.authority.currentHolderName ? ` · ${ec.authority.currentHolderName}` : ""}
                     </p>
+                  )}
+                  {ec.validationStatus === "NOT_VALIDATED" && (
+                    <p className="text-amber-700">Not yet validated</p>
                   )}
                 </div>
-              </div>
-            )}
-            {inv.q2EvidenceType && (
-              <div className="px-4 py-3 flex gap-4">
-                <span className="text-xs font-mono text-muted-foreground w-6 mt-0.5">Q2</span>
-                <div>
-                  <p className="font-medium">
-                    Evidence: {inv.q2EvidenceType.charAt(0) + inv.q2EvidenceType.slice(1).toLowerCase()}
-                  </p>
-                  {inv.q2EvidenceDescription && (
-                    <p className="text-muted-foreground text-xs mt-0.5">{inv.q2EvidenceDescription}</p>
-                  )}
-                  {inv.q2ActivationThreshold && (
-                    <p className="text-muted-foreground text-xs mt-1 leading-relaxed">
-                      <span className="font-medium text-foreground">Activation threshold:</span>{" "}
-                      {inv.q2ActivationThreshold}
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-            {(inv.q3InterceptionThresholdUsd || inv.q3EscalationThresholdUsd) && (
-              <div className="px-4 py-3 flex gap-4">
-                <span className="text-xs font-mono text-muted-foreground w-6 mt-0.5">Q3</span>
-                <div className="space-y-0.5">
-                  {inv.q3InterceptionThresholdUsd && (
-                    <p className="text-muted-foreground text-xs">
-                      <span className="font-medium text-foreground">Interception threshold:</span>{" "}
-                      {fmt(parseFloat(inv.q3InterceptionThresholdUsd))}/call
-                    </p>
-                  )}
-                  {inv.q3EscalationThresholdUsd && (
-                    <p className="text-muted-foreground text-xs">
-                      <span className="font-medium text-foreground">Escalation threshold:</span>{" "}
-                      {fmt(parseFloat(inv.q3EscalationThresholdUsd))}/mo
-                    </p>
-                  )}
-                </div>
-              </div>
-            )}
-            {inv.q6ReasoningChain && (
-              <div className="px-4 py-3 flex gap-4">
-                <span className="text-xs font-mono text-muted-foreground w-6 mt-0.5">Q6</span>
-                <p className="text-muted-foreground text-xs leading-relaxed">{inv.q6ReasoningChain}</p>
-              </div>
-            )}
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* Enforcement boundary */}
+        {boundary && (
+          <div className="border rounded-lg p-4 space-y-2 text-xs">
+            <p className="text-sm font-semibold">Enforcement Boundary</p>
+            <div className="grid grid-cols-1 gap-1.5 text-muted-foreground">
+              <p><span className="font-medium text-foreground">Required boundary:</span> {boundary.requiredBoundary}</p>
+              <p><span className="font-medium text-foreground">DAL-X suitability:</span> {boundary.dalxSuitability}</p>
+              {boundary.integrationPoint && (
+                <p><span className="font-medium text-foreground">Integration point:</span> {boundary.integrationPoint}</p>
+              )}
+              {boundary.downstreamValidationPoint && (
+                <p><span className="font-medium text-foreground">Downstream validation:</span> {boundary.downstreamValidationPoint}</p>
+              )}
+              {boundary.blocker && (
+                <p className="text-amber-700"><span className="font-medium">Blocker:</span> {boundary.blocker}</p>
+              )}
+            </div>
           </div>
         )}
 
         {/* Signing form */}
         <SponsorSigningForm
           token={token}
-          sponsorName={inv?.q1SponsorName ?? ""}
+          sponsorName={inv?.sponsorName ?? ""}
         />
 
         <p className="text-xs text-muted-foreground leading-relaxed border-t pt-4">

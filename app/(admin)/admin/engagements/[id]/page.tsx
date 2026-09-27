@@ -44,10 +44,10 @@ export default async function EngagementDetailPage({
     registrationStatus: (w.registrationStatus ?? "ACTIVE") as "ACTIVE" | "SUSPENDED" | "DECOMMISSIONING" | "CLOSED",
     sortOrder: w.sortOrder,
     investigation: w.investigation
-      ? { completedAt: w.investigation.completedAt?.toISOString() ?? null }
-      : null,
-    governancePosture: w.governancePosture
-      ? { posture: w.governancePosture.posture as "KEEP" | "DOWNSIZE" | "REPLACE" | "KILL" }
+      ? {
+          completedAt: w.investigation.completedAt?.toISOString() ?? null,
+          disposition: w.investigation.disposition ?? null,
+        }
       : null,
     defenseFile: w.defenseFile ? { status: w.defenseFile.status } : null,
   }));
@@ -125,7 +125,7 @@ export default async function EngagementDetailPage({
           <div>
             <p className="text-sm font-medium">Governance Registry</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Assign and lock a governance posture for each agent
+              Decision Governance Review records and dispositions
             </p>
           </div>
           <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-foreground transition-colors" />
