@@ -1,11 +1,11 @@
 # Governance Manifest — JSON Schema Specification
-## DAL-X Policy Configuration Format v2.0
+## DAL-X Policy Configuration Format v3.0
 
 This document is the authoritative contract between the Decision Governance Review and DAL-X.
 The DGR app generates this manifest. The executive sponsor signs it. DAL-X loads the signed
 version as its runtime enforcement configuration.
 
-**Three-act rule:** A PROPOSED manifest is not a signed policy. A SIGNED manifest is not yet
+**Three-act rule.** A PROPOSED manifest is not a signed policy. A SIGNED manifest is not yet
 an enforced policy. Enforcement begins only when DAL-X loads a manifest the named sponsor
 has signed. These states must never be conflated.
 
@@ -15,7 +15,7 @@ has signed. These states must never be conflated.
 
 ```json
 {
-  "manifestVersion": "2.0",
+  "manifestVersion": "3.0",
   "manifestStatus": "PROPOSED | SIGNED | SUPERSEDED",
   "engagementId": "<uuid>",
   "companyName": "<string>",
@@ -26,24 +26,28 @@ has signed. These states must never be conflated.
     "title": "<string>",
     "email": "<string>"
   },
+  "enforcementReady": "<boolean>",
+  "enforcementReadyAt": "<ISO8601 | null>",
   "summary": {
     "totalAgents": "<int>",
-    "postureBreakdown": {
+    "dispositionBreakdown": {
       "KEEP": "<int>",
       "DOWNSIZE": "<int>",
       "REPLACE": "<int>",
       "KILL": "<int>"
-    },
-    "totalLockedPostures": "<int>"
+    }
   },
   "agents": [ "<AgentEntry[]>" ]
 }
 ```
 
 **Field notes:**
-- `manifestStatus`: Must be `PROPOSED` until the sponsor signs. Transitions to `SIGNED` on
-  signing. Transitions to `SUPERSEDED` when a new review cycle begins and a new PROPOSED
-  manifest is generated. SUPERSEDED manifests are never deleted.
+- `manifestStatus`: PROPOSED until the sponsor signs. Transitions to SIGNED on signing.
+  Transitions to SUPERSEDED when a new review cycle begins and a new PROPOSED manifest is
+  generated. SUPERSEDED manifests are never deleted.
+- `enforcementReady`: True only when all of the following hold: disposition permits operation
+  (KEEP or DOWNSIZE), all execution classes are VALIDATED, enforcement boundary suitability
+  is SUITABLE, sponsor has signed, and any prerequisites are resolved.
 - `signedAt` / `signedBy`: Null when PROPOSED. Populated on signing. Immutable after signing.
 
 ---
@@ -58,206 +62,212 @@ One entry per registered AI agent in the engagement.
   "name": "<string>",
   "registrationStatus": "ACTIVE | SUSPENDED | DECOMMISSIONING | CLOSED",
   "permittedPurpose": "<string>",
-  "authorityChain": { "<AuthorityChain>" },
-  "evidenceStandard": { "<EvidenceStandard>" },
-  "costBoundaries": { "<CostBoundaries>" },
-  "alternativeMechanism": { "<AlternativeMechanism>" },
-  "riskConditions": [ "<RiskCondition[]>" ],
-  "governancePosture": { "<GovernancePosture>" }
+  "businessOutcome": "<string>",
+  "sponsor": { "<Sponsor>" },
+  "disposition": { "<Disposition>" },
+  "executionClasses": [ "<ExecutionClass[]>" ],
+  "enforcementBoundary": { "<EnforcementBoundary>" }
 }
 ```
 
 **Field notes:**
-- `registrationStatus`: Reflects the agent's current operational status. DAL-X uses this to
-  determine whether to evaluate the agent at all. CLOSED agents have no active enforcement.
+- `registrationStatus`: Reflects the agent's current operational status. CLOSED agents have
+  no active enforcement.
 - `permittedPurpose`: The explicit statement of what this agent is authorized to do. DAL-X
   validates execution requests against this boundary.
 
 ---
 
-## AuthorityChain
+## Sponsor
 
-Who owns this agent and who DAL-X validates before authorizing execution.
+The named individual who signs the Defense File and is accountable for this agent's authority.
 
 ```json
 {
-  "sponsorName": "<string>",
-  "sponsorTitle": "<string>",
-  "sponsorEmail": "<string>",
-  "authorizedAt": "<ISO8601 | null>"
+  "name": "<string>",
+  "title": "<string>",
+  "email": "<string>"
 }
 ```
 
 **Field notes:**
-- `authorizedAt`: Null until the sponsor signs the manifest. Populated on signing.
 - The sponsor is a named individual, not a department or role. DAL-X cannot validate
   authority against a title alone.
+- Populated from the investigation's `sponsorName`, `sponsorTitle`, `sponsorEmail` fields.
 
 ---
 
-## EvidenceStandard
+## Disposition
 
-The evidence threshold required before this agent may be activated or its authority expanded.
-DAL-X verifies that the required validation STATUS exists — it does not re-evaluate the
-underlying business evidence on each execution.
+The governance finding and its supporting evidence, recorded in Section 4 of the investigation.
 
 ```json
 {
-  "type": "NONE | ANECDOTAL | DOCUMENTED",
-  "activationThreshold": "<string | null>",
-  "expansionConditions": "<string | null>"
+  "verdict": "KEEP | DOWNSIZE | REPLACE | KILL",
+  "reasoning": "<string>",
+  "costPerCallUsd": "<decimal | null>",
+  "monthlyVolume": "<int | null>",
+  "riskNote": "<string | null>",
+  "alternativeNote": "<string | null>",
+  "analystName": "<string>"
 }
 ```
 
-**Field notes:**
-- `activationThreshold`: The evidence standard that must be met before this agent is
-  activated or reactivated (e.g., "Documented performance against RCM denial rate baseline
-  required before any volume increase"). Null if type is NONE.
-- `expansionConditions`: Conditions under which this agent's authority boundary may be
-  expanded. Null if no expansion path is defined.
+**Verdict definitions:**
 
----
-
-## CostBoundaries
-
-The approved cost parameters DAL-X enforces at the call site.
-
-```json
-{
-  "approvedCostPerCallUsd": "<decimal | null>",
-  "approvedMonthlyVolumeLimit": "<int | null>",
-  "approvedMonthlyTotalUsd": "<decimal | null>",
-  "interceptionThresholdUsd": "<decimal | null>",
-  "escalationThresholdUsd": "<decimal | null>"
-}
-```
-
-**Field notes:**
-- `interceptionThresholdUsd`: Cost per call at which DAL-X intercepts the execution request
-  for review. If null, cost-based interception is not active for this agent.
-- `escalationThresholdUsd`: Monthly cumulative spend at which DAL-X escalates to the named
-  sponsor. If null, spend-based escalation is not active.
-- DAL-X enforces these boundaries. It does not modify them. Changes require a new manifest
-  signed by the named sponsor.
-
----
-
-## AlternativeMechanism
-
-The approved lower-cost alternative identified in Q4. DAL-X can block the current agent and
-authorize the alternative once implemented. DAL-X does not build the alternative route —
-the client's technical team is responsible for implementation.
-
-```json
-{
-  "type": "RULES_BASED | RPA | SMALLER_MODEL | NO_MODEL | OTHER | null",
-  "description": "<string | null>",
-  "estimatedCostPerCallUsd": "<decimal | null>",
-  "migrationConditions": "<string | null>",
-  "clientImplementationRequired": "<boolean>"
-}
-```
-
-**Field notes:**
-- `migrationConditions`: The conditions the client's technical team must satisfy before the
-  alternative becomes the authorized execution path. Required when type is not NO_MODEL or null.
-- `clientImplementationRequired`: True whenever an alternative mechanism has been identified
-  and must be implemented by the client. DAL-X uses this to flag whether an alternative
-  route is expected to exist in the client environment.
-
----
-
-## RiskCondition
-
-One entry per risk identified in Q5. These are the conditions that drive DAL-X escalation
-triggers and prohibited execution conditions.
-
-```json
-{
-  "id": "<uuid>",
-  "description": "<string>",
-  "category": "OPERATIONAL | REGULATORY | COMPLIANCE | REPUTATIONAL",
-  "severity": "LOW | MEDIUM | HIGH",
-  "outputConditions": "<string>",
-  "escalationTrigger": "<string>",
-  "requiredReviewer": {
-    "name": "<string>",
-    "title": "<string>"
-  },
-  "prohibitedExecutionConditions": "<string | null>"
-}
-```
-
-**Field notes:**
-- `outputConditions`: The specific output characteristics of this agent that create or
-  indicate this risk (e.g., "outputs that modify patient treatment codes without documented
-  physician review").
-- `escalationTrigger`: The condition that causes DAL-X to fire an escalation event for this
-  risk (e.g., "any output in category X exceeding confidence threshold Y").
-- `requiredReviewer`: The named individual who must review escalations triggered by this
-  risk condition. Must be a person, not a department.
-- `prohibitedExecutionConditions`: If present, DAL-X blocks execution entirely when these
-  conditions are detected. No token is issued. Null if there are no absolute prohibitions
-  for this risk.
-
----
-
-## GovernancePosture
-
-The governance posture proposed by DGR and, once signed, enforced by DAL-X.
-
-```json
-{
-  "posture": "KEEP | DOWNSIZE | REPLACE | KILL",
-  "dalxEnforcementPosture": "<string>",
-  "reason": "<string>",
-  "evidenceSummary": "<string | null>",
-  "conditionForChange": "<string>",
-  "proposedAt": "<ISO8601 | null>",
-  "lockedAt": "<ISO8601 | null>"
-}
-```
-
-**DAL-X enforcement posture by verdict:**
-
-| Posture | DAL-X Enforcement |
+| Verdict | DAL-X Enforcement |
 |---------|------------------|
-| KEEP | Maintains the approved authority boundary. Valid execution requests may receive authorization tokens. Defined cost, volume, review, and escalation controls remain active. |
-| DOWNSIZE | Restricts the agent to the approved reduced scope. Requests outside that scope are blocked or escalated. Approved alternative routes may be invoked where the client has configured them. |
-| REPLACE | Revokes execution authority from the current agent. No authorization token is issued for the replaced mechanism. The approved alternative becomes the authorized execution path once implemented and validated. |
+| KEEP | Maintains the approved authority boundary. Valid execution requests receive authorization tokens. Cost, volume, review, and escalation controls remain active. |
+| DOWNSIZE | Restricts the agent to the approved reduced scope. Requests outside that scope are blocked or escalated. |
+| REPLACE | Revokes execution authority from the current agent. No authorization token is issued. The approved alternative becomes the authorized path once implemented and validated. |
 | KILL | Revokes all execution authority. No authorization token is issued. The agent remains blocked until decommissioning is confirmed and its registration is formally closed. |
 
 **Field notes:**
-- `dalxEnforcementPosture`: The full text DAL-X displays and logs for this agent's enforcement
-  state. Populated from the posture derivation engine at manifest generation time.
-- `reason`: The evidence-derived reason for this posture. Not asserted independently of Q1–Q5.
-- `conditionForChange`: The specific condition under which this posture would change if new
-  evidence appeared.
-- `lockedAt`: Null until the analyst locks the posture in the registry. A locked posture is
-  a prerequisite for manifest generation. Postures cannot be changed after the manifest is SIGNED.
+- `reasoning`: The evidence-derived reason for this verdict. Not asserted independently of
+  the four investigation sections.
+- `analystName`: Required. The named analyst who completed Section 4.
+
+---
+
+## ExecutionClass
+
+One entry per distinct action the workflow performs. Produced by Section 1 of the investigation.
+An execution class must be VALIDATED before an authority entry can be assigned to it.
+
+```json
+{
+  "executionClassId": "<uuid>",
+  "action": "<string>",
+  "target": "<string>",
+  "scope": "<string>",
+  "consequenceRationale": "<string>",
+  "validationStatus": "VALIDATED | NOT_VALIDATED",
+  "validatedBy": "<string | null>",
+  "validationEvidence": "<string | null>",
+  "validationDate": "<ISO8601 | null>",
+  "authority": { "<AuthorityEntry>" }
+}
+```
+
+**Field notes:**
+- `action`: What the agent does — the specific operation (e.g., "generates denial appeal letter").
+- `target`: Where the action reaches — the system or data it touches (e.g., "patient billing record").
+- `scope`: The boundary of that reach (e.g., "read-only access to current claim; no write authority").
+- `consequenceRationale`: What breaks if the agent acts incorrectly at this class.
+- `validatedBy`: The named reviewer who confirmed the class declaration. Required before
+  `validationStatus` may be set to VALIDATED.
+
+---
+
+## AuthorityEntry
+
+One authority entry per execution class. Produced by Section 2 of the investigation.
+Specifies who holds authority over this class and what DAL-X must verify at runtime.
+
+```json
+{
+  "authorityLevel": "AUTO | REVIEW | ESCALATE | DENY",
+  "authorityRole": "<string>",
+  "authorityBasis": "<string | null>",
+  "currentHolderName": "<string | null>",
+  "currentHolderTitle": "<string | null>",
+  "evidenceRequirement": "<string>",
+  "runtimeSignal": "<string>"
+}
+```
+
+**Authority level definitions:**
+
+| Level | Meaning | Required fields |
+|-------|---------|----------------|
+| AUTO | An approved policy authorizes execution without human review | `authorityRole`, `authorityBasis` |
+| REVIEW | A named role must review before execution proceeds | `authorityRole`, `currentHolderName`, `currentHolderTitle` |
+| ESCALATE | A named authority holder must approve | `authorityRole`, `currentHolderName`, `currentHolderTitle` |
+| DENY | Execution is prohibited under all conditions | `authorityRole`, `authorityBasis` |
+
+**Field notes:**
+- `authorityBasis`: The specific policy or rule. Required for AUTO (approved policy name) and
+  DENY (rule mandating denial). Nullable for REVIEW and ESCALATE.
+- `currentHolderName` / `currentHolderTitle`: The person who held this authority when the
+  DGR was completed. Required for REVIEW and ESCALATE.
+- `evidenceRequirement`: What must exist at execution time before a decision can be made.
+  DAL-X verifies this at the call site.
+- `runtimeSignal`: How DAL-X identifies this execution class at runtime. Must be unique
+  within the agent's scope.
+
+---
+
+## EnforcementBoundary
+
+One boundary entry per agent. Produced by Section 3 of the investigation.
+Documents the execution path and whether DAL-X can enforce the approved authority at this boundary.
+
+```json
+{
+  "executionPath": "<string>",
+  "bypassPaths": "<string | null>",
+  "requiredBoundary": "<string>",
+  "dalxSuitability": "SUITABLE | PREREQUISITES_REQUIRED | NOT_SUITABLE",
+  "integrationPoint": "<string>",
+  "requiredExecutionInfo": "<string | null>",
+  "downstreamValidationPoint": "<string>",
+  "blocker": "<string | null>",
+  "sponsorDecision": "SUSPEND | ESTABLISH_BOUNDARY | OVERRIDE_ACCEPTED | null",
+  "sponsorDecisionNote": "<string | null>",
+  "sponsorDecisionAt": "<ISO8601 | null>"
+}
+```
+
+**Suitability outcomes:**
+
+| Suitability | Meaning |
+|-------------|---------|
+| SUITABLE | DAL-X can enforce the approved authority at this boundary |
+| PREREQUISITES_REQUIRED | Enforcement is possible but blocked by a named prerequisite (see `blocker`) |
+| NOT_SUITABLE | DAL-X cannot enforce at this boundary; sponsor decision required |
+
+**Field notes:**
+- `executionPath`: The full sequence from agent invocation to downstream effect
+  (e.g., "agent → orchestrator → gateway → DAL-X → downstream system").
+- `bypassPaths`: Named paths that circumvent DAL-X, if any. Null if none identified.
+- `requiredBoundary`: The boundary that must exist for DAL-X enforcement to be valid.
+- `integrationPoint`: Where DAL-X sits in the execution path.
+- `requiredExecutionInfo`: What execution information DAL-X needs to enforce at this boundary.
+- `downstreamValidationPoint`: Where the downstream system confirms execution occurred
+  within the approved boundary.
+- `blocker`: For PREREQUISITES_REQUIRED or NOT_SUITABLE — names the specific blocker.
+- `sponsorDecision`: Required when `dalxSuitability` is NOT_SUITABLE. The investigation
+  cannot close without a recorded sponsor decision.
 
 ---
 
 ## State Transitions
 
 ```
-PROPOSED → SIGNED      (executive sponsor signs via /api/sign/[token])
+PROPOSED → SIGNED      (executive sponsor signs via /sign/[token])
 SIGNED   → SUPERSEDED  (new review cycle begins; new PROPOSED manifest created)
 ```
 
 SUPERSEDED manifests are read-only historical records. They are never deleted.
-DAL-X should be notified by Jochanni Labs FDE when a manifest transitions to SUPERSEDED,
-so the new SIGNED manifest can be loaded as the active enforcement configuration.
+
+`enforcementReady` transitions from false to true only after:
+1. Disposition is KEEP or DOWNSIZE
+2. All execution classes are VALIDATED
+3. `dalxSuitability` is SUITABLE
+4. Sponsor has signed (manifestStatus is SIGNED)
+5. Any prerequisites identified in the enforcement boundary are resolved
 
 ---
 
 ## What DAL-X Does NOT Do
 
 - DAL-X does not re-validate business evidence on each execution request. It verifies that
-  the required validation status exists in the signed manifest.
-- DAL-X does not build or configure the alternative mechanism route. The client's technical
-  environment must provide that route. DAL-X authorizes or blocks against it.
+  required evidence exists as specified in `evidenceRequirement` at the call site.
+- DAL-X does not build or configure alternative mechanism routes. The client's technical
+  environment must provide those routes.
 - DAL-X does not modify the signed manifest. Changes require a new DGR review cycle,
   a new proposed manifest, and a new sponsor signature.
 - DAL-X does not generate its own authority. It enforces the authority the named sponsor
   has signed.
+- A signed manifest is not proof that enforcement is active. Engineering must implement
+  the approved version and technical validators must accept the enforcement evidence.
