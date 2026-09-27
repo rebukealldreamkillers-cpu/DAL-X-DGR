@@ -35,7 +35,16 @@
       "Bash(npx next *)",
       "WebFetch(domain:www.decisionauthoritylayer.ai)",
       "Bash(npx tsx *)",
-      "Bash(echo \"Exit: $?\")"
+      "Bash(echo \"Exit: $?\")",
+      "Bash(mkdir -p \"C:/Users/kevin/dal-x-dgr/app/api/execution-classes/[id]\")",
+      "Bash(mkdir -p \"C:/Users/kevin/dal-x-dgr/app/api/enforcement-boundary/[investigationId]\")",
+      "Bash(npx drizzle-kit *)",
+      "mcp__plugin_vercel_vercel__list_teams",
+      "mcp__plugin_vercel_vercel__list_projects",
+      "mcp__plugin_vercel_vercel__create_deployment",
+      "Bash(node *)",
+      "WebFetch(domain:jochannilabs.com)",
+      "Bash(grep -v \"^\\\\-\\\\-$\")"
     ]
   }
 }
