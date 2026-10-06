@@ -67,6 +67,35 @@ export default async function EngagementsPage() {
                 const dgrCompleteCount = engagement.registeredAgents?.filter(
                   (w) => w.investigation?.completedAt,
                 ).length ?? 0;
+
+                // In-progress investigation density
+                const inProgressAgents = (engagement.registeredAgents ?? []).filter(
+                  (w) => w.investigation && !w.investigation.completedAt,
+                );
+                const totalSectionsDone = inProgressAgents.reduce((sum, w) => {
+                  const inv = w.investigation!;
+                  return (
+                    sum +
+                    [
+                      inv.section1CompletedAt,
+                      inv.section2CompletedAt,
+                      inv.section3CompletedAt,
+                      inv.section4CompletedAt,
+                    ].filter(Boolean).length
+                  );
+                }, 0);
+                const totalSectionsPossible = inProgressAgents.length * 4;
+
+                // Disposition breakdown for REGISTRY+
+                const dispositions = (engagement.registeredAgents ?? []).reduce(
+                  (acc, w) => {
+                    const d = w.investigation?.disposition;
+                    if (d) acc[d] = (acc[d] ?? 0) + 1;
+                    return acc;
+                  },
+                  {} as Record<string, number>,
+                );
+
                 const latestManifest = engagement.governanceManifests?.[0];
                 const manifestCfg = latestManifest
                   ? MANIFEST_STATUS_CONFIG[latestManifest.manifestStatus]
@@ -84,11 +113,29 @@ export default async function EngagementsPage() {
                       <StageBadge stage={engagement.stage as "CENSUS" | "INVESTIGATION" | "REGISTRY" | "DEFENSE_FILES" | "CLOSED"} />
                     </TableCell>
                     <TableCell>
-                      <span className="text-sm">
-                        {agentCount > 0
-                          ? <>{dgrCompleteCount}<span className="text-muted-foreground">/{agentCount} DGR done</span></>
-                          : <span className="text-muted-foreground">—</span>}
-                      </span>
+                      {agentCount === 0 ? (
+                        <span className="text-xs text-muted-foreground">—</span>
+                      ) : (
+                        <div className="space-y-0.5">
+                          <p className="text-sm">
+                            {dgrCompleteCount}
+                            <span className="text-muted-foreground">/{agentCount} done</span>
+                          </p>
+                          {engagement.stage === "INVESTIGATION" && totalSectionsPossible > 0 && (
+                            <p className="text-[10px] text-muted-foreground">
+                              {totalSectionsDone}/{totalSectionsPossible} sections
+                            </p>
+                          )}
+                          {(engagement.stage === "REGISTRY" || engagement.stage === "DEFENSE_FILES" || engagement.stage === "CLOSED") &&
+                            Object.keys(dispositions).length > 0 && (
+                              <p className="text-[10px] text-muted-foreground">
+                                {Object.entries(dispositions)
+                                  .map(([d, n]) => `${n} ${d}`)
+                                  .join(" · ")}
+                              </p>
+                            )}
+                        </div>
+                      )}
                     </TableCell>
                     <TableCell>
                       {manifestCfg ? (
