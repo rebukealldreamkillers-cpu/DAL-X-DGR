@@ -244,7 +244,16 @@ export async function signManifest(
 ) {
   const manifest = await db.query.governanceManifests.findFirst({
     where: eq(governanceManifests.id, manifestId),
-    with: { engagement: { with: { registeredAgents: { where: isNull(registeredAgents.deletedAt) } } } },
+    with: {
+      engagement: {
+        with: {
+          registeredAgents: {
+            where: isNull(registeredAgents.deletedAt),
+            with: { defenseFile: true },
+          },
+        },
+      },
+    },
   });
 
   if (!manifest) throw new Error("Manifest not found");
@@ -252,8 +261,19 @@ export async function signManifest(
     throw new Error(`Cannot sign a manifest in ${manifest.manifestStatus} status`);
   }
 
-  // Recompute enforcement readiness for each agent now that the manifest will be signed
+  // Require all issued defense files to have a sponsor decision before the manifest
+  // can be signed. A later sponsor departure would otherwise leave the signed manifest
+  // governing an earlier, unreconciled state.
   const agents = manifest.engagement.registeredAgents;
+  const pendingDefenseFiles = agents.filter(
+    (a) => a.defenseFile?.status === "DRAFT" || a.defenseFile?.status === "SENT",
+  );
+  if (pendingDefenseFiles.length > 0) {
+    const names = pendingDefenseFiles.map((a) => a.name).join(", ");
+    throw new Error(
+      `Cannot sign manifest: ${pendingDefenseFiles.length} defense file(s) are awaiting a sponsor decision (${names}). All defense files must be signed or have a recorded departure before the manifest can be signed.`,
+    );
+  }
   let enforcementReadyCount = 0;
   const updatedAgentEntries = await Promise.all(
     ((manifest.manifestJson as ManifestJson).agents ?? []).map(async (entry) => {

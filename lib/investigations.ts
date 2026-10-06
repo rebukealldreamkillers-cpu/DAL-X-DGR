@@ -264,7 +264,15 @@ export async function checkEnforcementReadiness(
   if (!boundary) {
     blockers.push("Enforcement boundary analysis not completed");
   } else if (boundary.dalxSuitability === "NOT_SUITABLE") {
-    if (boundary.sponsorDecision !== "OVERRIDE_ACCEPTED") {
+    // Sponsor acceptance of unenforceable operation is a governance record, not an enforcement
+    // boundary. NOT_SUITABLE agents are never enforcement-ready regardless of sponsor decision.
+    if (boundary.sponsorDecision === "OVERRIDE_ACCEPTED") {
+      blockers.push("Operating risk accepted — enforcement boundary not established");
+    } else if (boundary.sponsorDecision === "SUSPEND") {
+      blockers.push("Execution suspended — enforcement boundary not established");
+    } else if (boundary.sponsorDecision === "ESTABLISH_BOUNDARY") {
+      blockers.push("Enforcement boundary pending establishment — not yet verified");
+    } else {
       blockers.push("No suitable enforcement boundary — sponsor decision required");
     }
   } else if (boundary.dalxSuitability === "PREREQUISITES_REQUIRED") {
