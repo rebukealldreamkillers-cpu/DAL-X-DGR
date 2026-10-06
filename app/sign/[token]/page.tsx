@@ -101,12 +101,12 @@ export default async function SignPage({
         {/* Three-act framing */}
         <div className="rounded-md border border-zinc-700 bg-zinc-900 px-4 py-3 space-y-1">
           <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
-            Act 2 of 3 — Executive authorization
+            Act 2 of 3: Executive authorization
           </p>
           <p className="text-xs text-zinc-300 leading-relaxed">
-            Jochanni Labs has completed the governance assessment (Act 1). Your signature
-            below authorizes the governance decision and enables DAL-X runtime enforcement
-            (Act 3). You may accept the issued decision or record a departure with rationale.
+            Jochanni Labs has completed the investigation (Act 1). Your signature authorizes
+            the governance decision and enables DAL-X enforcement (Act 3). You may accept
+            the issued decision or record a departure with rationale.
           </p>
         </div>
 

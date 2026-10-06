@@ -20,10 +20,10 @@ type Props = {
 };
 
 const DISPOSITION_STYLES: Record<Disposition, { border: string; bg: string; text: string; label: string; description: string }> = {
-  KEEP: { border: "border-emerald-500/40", bg: "bg-emerald-500/10", text: "text-emerald-400", label: "KEEP", description: "Investment justified — continue within approved boundary" },
-  DOWNSIZE: { border: "border-amber-500/40", bg: "bg-amber-500/10", text: "text-amber-400", label: "DOWNSIZE", description: "Requirement real — mechanism overbuilt for it" },
-  REPLACE: { border: "border-orange-500/40", bg: "bg-orange-500/10", text: "text-orange-400", label: "REPLACE", description: "Mechanism lacks evidence — revoke and implement alternative" },
-  KILL: { border: "border-red-500/40", bg: "bg-red-500/10", text: "text-red-400", label: "KILL", description: "No evidence, no viable alternative — revoke all authority" },
+  KEEP: { border: "border-emerald-500/40", bg: "bg-emerald-500/10", text: "text-emerald-400", label: "KEEP", description: "Investment justified, continue within approved boundary" },
+  DOWNSIZE: { border: "border-amber-500/40", bg: "bg-amber-500/10", text: "text-amber-400", label: "DOWNSIZE", description: "Requirement real, mechanism overbuilt" },
+  REPLACE: { border: "border-orange-500/40", bg: "bg-orange-500/10", text: "text-orange-400", label: "REPLACE", description: "Mechanism lacks evidence, implement alternative" },
+  KILL: { border: "border-red-500/40", bg: "bg-red-500/10", text: "text-red-400", label: "KILL", description: "No evidence and no viable alternative" },
 };
 
 export function Section4Disposition({ agentId, investigation, completedAt, onComplete, onUpdate }: Props) {
@@ -213,7 +213,7 @@ export function Section4Disposition({ agentId, investigation, completedAt, onCom
         <Label>Disposition reasoning <span className="text-muted-foreground font-normal text-xs">(required)</span></Label>
         <Textarea
           className="min-h-[90px] resize-none text-sm"
-          placeholder="Explain the disposition based on the evidence from sections 1–3, cost inputs, and risk conditions above."
+          placeholder="Explain the disposition based on evidence from sections 1 through 3, cost data, and risk conditions above."
           value={form.dispositionReasoning}
           onChange={(e) => update({ dispositionReasoning: e.target.value })}
         />
@@ -244,7 +244,7 @@ export function Section4Disposition({ agentId, investigation, completedAt, onCom
         <div className="flex items-center gap-2 rounded-md border border-emerald-700/40 bg-emerald-500/5 px-3 py-2.5">
           <Lock className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
           <p className="text-xs text-emerald-400 font-medium">
-            Decision record locked — disposition: {investigation.disposition ?? "—"}{investigation.analystName ? ` · ${investigation.analystName}` : ""}
+            Decision record locked: {investigation.disposition ?? "none"}{investigation.analystName ? ` · ${investigation.analystName}` : ""}
           </p>
         </div>
       )}

@@ -202,7 +202,7 @@ export function Section3EnforcementBoundary({
         <Label>Required enforcement boundary</Label>
         <Input
           className="h-9 text-sm"
-          placeholder="e.g. RCM API gateway — every call path must pass through it"
+          placeholder="e.g. RCM API gateway (every call path must pass through it)"
           value={form.requiredBoundary}
           onChange={(e) => update({ requiredBoundary: e.target.value })}
         />
@@ -293,7 +293,7 @@ export function Section3EnforcementBoundary({
           <Label>Integration point</Label>
           <Input
             className="h-9 text-sm"
-            placeholder="e.g. RCM API gateway — /api/auth/submit endpoint"
+            placeholder="e.g. RCM API gateway at /api/auth/submit"
             value={form.integrationPoint}
             onChange={(e) => update({ integrationPoint: e.target.value })}
           />
@@ -351,7 +351,7 @@ export function Section3EnforcementBoundary({
         <div className="flex items-center gap-2 rounded-md border border-emerald-700/40 bg-emerald-500/5 px-3 py-2.5">
           <Lock className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
           <p className="text-xs text-emerald-400 font-medium">
-            Section locked — boundary: {boundary?.requiredBoundary ?? "—"} · DAL-X:{" "}
+            Section locked: {boundary?.requiredBoundary ?? "none"} · DAL-X:{" "}
             {boundary?.dalxSuitability === "SUITABLE"
               ? "suitable"
               : boundary?.dalxSuitability === "PREREQUISITES_REQUIRED"

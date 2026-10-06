@@ -201,7 +201,7 @@ export default async function ManifestPage({
                           </p>
                         </div>
                         <p className="text-xs text-slate-700">
-                          {agent.defaultExecutionRule} — any execution class not listed in the authority matrix is denied
+                          DENY: any execution class not listed in the authority matrix is denied
                         </p>
                       </div>
 

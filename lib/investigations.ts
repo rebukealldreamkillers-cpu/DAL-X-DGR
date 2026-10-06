@@ -250,7 +250,7 @@ export async function checkEnforcementReadiness(
   }
 
   if (!inv.disposition || inv.disposition === "KILL" || inv.disposition === "REPLACE") {
-    blockers.push(`Disposition is ${inv.disposition ?? "not set"} — does not permit continued operation`);
+    blockers.push(`Disposition is ${inv.disposition ?? "not set"}: agent cannot continue operation`);
   }
 
   const classes = inv.executionClasses ?? [];
@@ -267,13 +267,13 @@ export async function checkEnforcementReadiness(
     // Sponsor acceptance of unenforceable operation is a governance record, not an enforcement
     // boundary. NOT_SUITABLE agents are never enforcement-ready regardless of sponsor decision.
     if (boundary.sponsorDecision === "OVERRIDE_ACCEPTED") {
-      blockers.push("Operating risk accepted — enforcement boundary not established");
+      blockers.push("Operating risk accepted, no enforcement boundary established");
     } else if (boundary.sponsorDecision === "SUSPEND") {
-      blockers.push("Execution suspended — enforcement boundary not established");
+      blockers.push("Execution suspended, no enforcement boundary established");
     } else if (boundary.sponsorDecision === "ESTABLISH_BOUNDARY") {
-      blockers.push("Enforcement boundary pending establishment — not yet verified");
+      blockers.push("Enforcement boundary not yet established");
     } else {
-      blockers.push("No suitable enforcement boundary — sponsor decision required");
+      blockers.push("No enforcement boundary: sponsor decision required");
     }
   } else if (boundary.dalxSuitability === "PREREQUISITES_REQUIRED") {
     blockers.push(`Prerequisites required: ${boundary.blocker ?? "unspecified"}`);

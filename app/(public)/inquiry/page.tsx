@@ -63,8 +63,7 @@ export default function InquiryPage() {
           <h2 className="text-xl font-semibold">Inquiry received</h2>
           <p className="text-sm text-muted-foreground leading-relaxed">
             Thank you. A member of the Jochanni Labs team will be in touch within one business day.
-            All engagements are conducted under mutual NDA by default — you will receive a
-            confirmation email shortly.
+            All engagements are under mutual NDA. You will receive a confirmation email shortly.
           </p>
         </div>
       </div>
@@ -80,9 +79,8 @@ export default function InquiryPage() {
           <h1 className="text-2xl font-semibold mt-2">Start a Decision Governance Review</h1>
           <p className="text-sm text-muted-foreground mt-2 leading-relaxed">
             A structured governance review completed in three working sessions within ten business
-            days after required evidence is received. We produce a signed Governance Manifest —
-            the DAL-X configuration that enforces each governance decision at runtime. Engaged
-            under mutual NDA.
+            days. We produce a signed Governance Manifest: the DAL-X configuration that enforces
+            each governance decision at runtime. Engaged under mutual NDA.
           </p>
         </div>
 
@@ -122,7 +120,7 @@ export default function InquiryPage() {
               </Label>
               <Textarea
                 id="aiSpendDescription"
-                placeholder="e.g. Three GPT-4o agents in our revenue cycle team — approximately $40k/year in token costs. We want a governance assessment with signed postures for each."
+                placeholder="e.g. Three GPT-4o agents in our revenue cycle team, roughly $40k/year in token costs. We want a governance review with signed decisions for each."
                 className="min-h-[90px] resize-none"
                 {...register("aiSpendDescription")}
               />

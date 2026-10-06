@@ -149,7 +149,7 @@ export async function GET(
 <head>
   <meta charset="UTF-8"/>
   <meta name="viewport" content="width=device-width,initial-scale=1"/>
-  <title>Decision Defense File — ${data.name}</title>
+  <title>Decision Defense File: ${data.name}</title>
   <style>
     *{box-sizing:border-box;}
     body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;color:#111;max-width:900px;margin:0 auto;padding:48px 40px;line-height:1.5;}

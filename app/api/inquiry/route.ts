@@ -29,13 +29,13 @@ export async function POST(req: Request) {
     resend.emails.send({
       from: FROM,
       to: contactEmail,
-      subject: `Your Decision Governance Review inquiry — ${companyName}`,
+      subject: `Your Decision Governance Review inquiry: ${companyName}`,
       html: ndaAcknowledgmentEmail(contactName, companyName),
     }),
     resend.emails.send({
       from: FROM,
       to: analystEmail,
-      subject: `[New Inquiry] ${companyName} — Decision Governance Review`,
+      subject: `[New Inquiry] ${companyName}: Decision Governance Review`,
       html: newInquiryAnalystEmail(
         contactName,
         companyName,

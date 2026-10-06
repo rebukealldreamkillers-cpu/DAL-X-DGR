@@ -19,10 +19,10 @@ type Props = {
 };
 
 const POSTURE_LABELS: Record<Posture, string> = {
-  KEEP: "Keep — investment justified",
-  DOWNSIZE: "Downsize — lower-cost path",
-  REPLACE: "Replace — insufficient evidence",
-  KILL: "Kill — no evidence, no alternative",
+  KEEP: "Keep: investment justified",
+  DOWNSIZE: "Downsize: lower-cost path",
+  REPLACE: "Replace: insufficient evidence",
+  KILL: "Kill: no evidence, no alternative",
 };
 
 export function SponsorSigningForm({ token, sponsorName, agentName, disposition, analystName }: Props) {

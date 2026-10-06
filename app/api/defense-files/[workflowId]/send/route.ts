@@ -40,7 +40,7 @@ export async function POST(
 
   await sendEmail({
     to: sponsorEmail,
-    subject: `Governance Defense File ready for your signature — ${data.name}`,
+    subject: `Governance Defense File ready for your signature: ${data.name}`,
     html: sponsorSignatureRequestEmail(
       sponsorName,
       data.name,

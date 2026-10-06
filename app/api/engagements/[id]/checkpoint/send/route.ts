@@ -23,7 +23,7 @@ export async function POST(
 
   await sendEmail({
     to: engagement.contactEmail,
-    subject: `60-day checkpoint — ${engagement.companyName} Decision Governance Review`,
+    subject: `60-day checkpoint: ${engagement.companyName} Decision Governance Review`,
     html: checkpointReminderEmail(
       engagement.contactName,
       engagement.companyName,

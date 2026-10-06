@@ -14,9 +14,9 @@ export const MODEL_TIERS = [
 ] as const;
 
 export const EVIDENCE_STATUS_OPTIONS = [
-  { value: "NONE", label: "None — no evidence exists" },
-  { value: "ANECDOTAL", label: "Anecdotal — informal reports only" },
-  { value: "DOCUMENTED", label: "Documented — written record exists" },
+  { value: "NONE", label: "None: no evidence exists" },
+  { value: "ANECDOTAL", label: "Anecdotal: informal reports only" },
+  { value: "DOCUMENTED", label: "Documented: written record exists" },
 ] as const;
 
 export const workflowSchema = z.object({

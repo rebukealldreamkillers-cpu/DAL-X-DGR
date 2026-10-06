@@ -51,7 +51,7 @@ export default async function NewWorkflowPage({
       <div>
         <h1 className="text-xl font-semibold">Register AI agent for governance assessment</h1>
         <p className="text-sm text-muted-foreground mt-1">
-          {workflowCount}/10 agents registered · Week 1 — Pipeline Census
+          {workflowCount}/10 agents registered
         </p>
       </div>
 

@@ -14,11 +14,11 @@ type StageTimestamps = {
 };
 
 const STEPS = [
-  { stage: "CENSUS" as Stage, label: "Census", desc: "Map all in-flight AI workflows", tsKey: "census" as keyof StageTimestamps },
-  { stage: "INVESTIGATION" as Stage, label: "Investigation", desc: "Four-section governance investigation per agent", tsKey: "investigation" as keyof StageTimestamps },
-  { stage: "REGISTRY" as Stage, label: "Registry", desc: "One disposition per agent", tsKey: "registry" as keyof StageTimestamps },
-  { stage: "DEFENSE_FILES" as Stage, label: "Defense Files", desc: "Signed accountability records", tsKey: "defenseFiles" as keyof StageTimestamps },
-  { stage: "CLOSED" as Stage, label: "Closed", desc: "Governance Manifest delivered", tsKey: "closed" as keyof StageTimestamps },
+  { stage: "CENSUS" as Stage, label: "Census", desc: "Register all AI agents in scope", tsKey: "census" as keyof StageTimestamps },
+  { stage: "INVESTIGATION" as Stage, label: "Investigation", desc: "Four-section investigation per agent", tsKey: "investigation" as keyof StageTimestamps },
+  { stage: "REGISTRY" as Stage, label: "Registry", desc: "Disposition issued per agent", tsKey: "registry" as keyof StageTimestamps },
+  { stage: "DEFENSE_FILES" as Stage, label: "Defense Files", desc: "Signed decision records", tsKey: "defenseFiles" as keyof StageTimestamps },
+  { stage: "CLOSED" as Stage, label: "Closed", desc: "Manifest delivered", tsKey: "closed" as keyof StageTimestamps },
 ];
 
 const ORDER: Stage[] = ["CENSUS", "INVESTIGATION", "REGISTRY", "DEFENSE_FILES", "CLOSED"];

@@ -85,11 +85,11 @@ export default async function PortalEngagementPage({
     .find(Boolean) ?? null;
 
   const STAGE_DESCRIPTION: Record<string, string> = {
-    CENSUS: "AI agents are being registered and catalogued. Governance investigations have not yet begun.",
-    INVESTIGATION: "Each agent is under a 4-section governance investigation. Decision records are being built.",
-    REGISTRY: "All investigations are complete. Governance decisions have been issued.",
-    DEFENSE_FILES: "Defense files have been issued. Sponsor authorization is required to activate DAL-X enforcement.",
-    CLOSED: "The governance review is complete. All defense files are authorized.",
+    CENSUS: "Agents are being registered. Investigations have not started.",
+    INVESTIGATION: "Each agent is under a four-section investigation. Decision records are being built.",
+    REGISTRY: "All investigations are complete. Decisions have been issued.",
+    DEFENSE_FILES: "Defense files sent. Sponsor authorization required before DAL-X enforcement can be activated.",
+    CLOSED: "Review complete. All defense files are authorized.",
   };
 
   return (
@@ -132,10 +132,10 @@ export default async function PortalEngagementPage({
           How this works
         </p>
         <p className="text-xs text-zinc-300 leading-relaxed">
-          Jochanni Labs has completed the governance assessment for each AI agent in scope
-          (Act 1). For each agent below, you may authorize or record a departure from the
-          proposed governance decision (Act 2). Your decision enables DAL-X to enforce the
-          policy at runtime (Act 3).
+          Jochanni Labs has completed the investigation for each agent in scope (Act 1).
+          For each agent below, you may authorize or record a departure from the issued
+          decision (Act 2). Your decision enables DAL-X to enforce the policy at runtime
+          (Act 3).
         </p>
       </div>
 
@@ -332,7 +332,7 @@ export default async function PortalEngagementPage({
           <div className="border rounded-lg px-5 py-4">
             <p className="text-sm font-medium">60-day checkpoint</p>
             <p className="text-xs text-muted-foreground mt-0.5">
-              Help us track real outcomes — tell us whether the recommended actions were carried out.
+              Tell us whether the recommended actions from this review were carried out.
             </p>
             <Link
               href={`/checkpoint/${id}`}

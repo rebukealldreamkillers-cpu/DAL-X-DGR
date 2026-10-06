@@ -95,7 +95,7 @@ export function Section2AuthorityMatrix({
     const form = getForm(ec);
     if (!form.authorityLevel) { setErrors((p) => ({ ...p, [ec.id]: "Select an authority level." })); return; }
     if (!form.authorityRole.trim()) { setErrors((p) => ({ ...p, [ec.id]: "Authority role is required." })); return; }
-    if (form.authorityLevel === "AUTO" && !form.authorityBasis.trim()) { setErrors((p) => ({ ...p, [ec.id]: "Authority basis is required for AUTO — name the policy or approved rule." })); return; }
+    if (form.authorityLevel === "AUTO" && !form.authorityBasis.trim()) { setErrors((p) => ({ ...p, [ec.id]: "Authority basis is required for AUTO. Name the policy or approved rule." })); return; }
     if ((form.authorityLevel === "REVIEW" || form.authorityLevel === "ESCALATE") && !form.currentHolderName.trim()) { setErrors((p) => ({ ...p, [ec.id]: "Current holder name is required for REVIEW and ESCALATE." })); return; }
     if (!form.evidenceRequirement.trim()) { setErrors((p) => ({ ...p, [ec.id]: "Evidence requirement is required." })); return; }
     if (!form.runtimeSignal.trim()) { setErrors((p) => ({ ...p, [ec.id]: "Runtime signal is required." })); return; }
@@ -151,7 +151,7 @@ export function Section2AuthorityMatrix({
   return (
     <div className="space-y-4 pt-1">
       <div className="text-sm text-muted-foreground leading-relaxed">
-        Assign authority to each execution class. Any class not assigned a level will be treated as DENIED at runtime. An AUTO class must name the policy or rule permitting automatic authorization — an empty authority field does not imply self-authorization.
+        Assign authority to each execution class. Any class without an assigned level is DENIED at runtime. An AUTO class must name the policy or rule permitting automatic authorization. An empty authority field does not imply self-authorization.
       </div>
 
       <div className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-400">
@@ -317,7 +317,7 @@ export function Section2AuthorityMatrix({
         <div className="flex items-center gap-2 rounded-md border border-emerald-700/40 bg-emerald-500/5 px-3 py-2.5">
           <Lock className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
           <p className="text-xs text-emerald-400 font-medium">
-            Section locked — authority assigned for all {executionClasses.length} class{executionClasses.length !== 1 ? "es" : ""}
+            Section locked: authority assigned for all {executionClasses.length} class{executionClasses.length !== 1 ? "es" : ""}
           </p>
         </div>
       )}

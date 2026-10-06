@@ -84,7 +84,7 @@ const SECTIONS: SectionMeta[] = [
     id: "s1",
     num: 1,
     title: "Execution Classes",
-    establishes: "Declare and validate what this agent does — each distinct action, target system, and scope boundary.",
+    establishes: "Declare and validate every consequential action this agent takes: action, target, and scope.",
     completedKey: "section1CompletedAt",
   },
   {

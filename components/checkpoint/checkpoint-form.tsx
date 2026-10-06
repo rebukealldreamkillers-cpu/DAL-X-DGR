@@ -26,9 +26,9 @@ type Response = {
 };
 
 const OUTCOME_OPTIONS = [
-  { value: "yes" as const, label: "Yes — action implemented as directed" },
-  { value: "in_progress" as const, label: "In progress — action is underway" },
-  { value: "no" as const, label: "No — action was not implemented" },
+  { value: "yes" as const, label: "Yes, implemented as directed" },
+  { value: "in_progress" as const, label: "In progress" },
+  { value: "no" as const, label: "No, not implemented" },
 ];
 
 export function CheckpointForm({ engagementId, workflows }: Props) {

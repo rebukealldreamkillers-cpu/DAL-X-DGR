@@ -126,7 +126,7 @@ export function Section1ExecutionClasses({
   return (
     <div className="space-y-4 pt-1">
       <div className="text-sm text-muted-foreground leading-relaxed">
-        The workflow owner and technical owner declare each execution class. The FDO records validation status — whether the declared class was confirmed through documentation, logs, configuration, or examples of actual executions.
+        The workflow owner and technical owner declare each execution class. The FDO records whether each class was confirmed through documentation, logs, configuration, or actual execution examples.
       </div>
 
       {/* Execution class list */}
@@ -256,7 +256,7 @@ export function Section1ExecutionClasses({
           </div>
           <div className="space-y-1">
             <Label className="text-xs">Consequence rationale <span className="text-muted-foreground">(why consequential)</span></Label>
-            <Textarea className="min-h-[60px] resize-none text-sm" placeholder="e.g. Submits financial claim on behalf of patient — incorrect submission causes claim denial and patient billing harm" value={addForm.consequenceRationale} onChange={(e) => setAddForm((p) => ({ ...p, consequenceRationale: e.target.value }))} />
+            <Textarea className="min-h-[60px] resize-none text-sm" placeholder="e.g. Submits financial claim on behalf of patient; incorrect submission causes claim denial and patient billing harm" value={addForm.consequenceRationale} onChange={(e) => setAddForm((p) => ({ ...p, consequenceRationale: e.target.value }))} />
           </div>
           {addError && <p className="text-xs text-red-600">{addError}</p>}
           <div className="flex gap-2">
@@ -295,7 +295,7 @@ export function Section1ExecutionClasses({
         <div className="flex items-center gap-2 rounded-md border border-emerald-700/40 bg-emerald-500/5 px-3 py-2.5">
           <Lock className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
           <p className="text-xs text-emerald-400 font-medium">
-            Section locked — {executionClasses.length} class{executionClasses.length !== 1 ? "es" : ""} declared, {executionClasses.filter((ec) => ec.validationStatus === "VALIDATED").length} validated
+            Section locked: {executionClasses.length} class{executionClasses.length !== 1 ? "es" : ""} declared, {executionClasses.filter((ec) => ec.validationStatus === "VALIDATED").length} validated
           </p>
         </div>
       )}
