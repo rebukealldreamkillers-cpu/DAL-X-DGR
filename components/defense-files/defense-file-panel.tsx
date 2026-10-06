@@ -50,16 +50,16 @@ type Props = {
 
 const STATUS_CONFIG: Record<Status, { label: string; class: string }> = {
   DRAFT: { label: "Draft", class: "bg-muted text-muted-foreground border-border" },
-  SENT: { label: "Awaiting signature", class: "bg-amber-50 text-amber-700 border-amber-200" },
-  SIGNED: { label: "Signed", class: "bg-emerald-50 text-emerald-700 border-emerald-200" },
-  OVERRIDDEN: { label: "Departure recorded", class: "bg-orange-50 text-orange-700 border-orange-200" },
+  SENT: { label: "Awaiting signature", class: "bg-amber-500/10 text-amber-400 border-amber-500/30" },
+  SIGNED: { label: "Signed", class: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" },
+  OVERRIDDEN: { label: "Departure recorded", class: "bg-orange-500/10 text-orange-400 border-orange-500/30" },
 };
 
 const DISPOSITION_STYLES: Record<Disposition, { border: string; bg: string; text: string }> = {
-  KEEP: { border: "border-emerald-400", bg: "bg-emerald-50", text: "text-emerald-800" },
-  DOWNSIZE: { border: "border-amber-400", bg: "bg-amber-50", text: "text-amber-800" },
-  REPLACE: { border: "border-orange-400", bg: "bg-orange-50", text: "text-orange-800" },
-  KILL: { border: "border-red-400", bg: "bg-red-50", text: "text-red-800" },
+  KEEP: { border: "border-emerald-500/40", bg: "bg-emerald-500/10", text: "text-emerald-400" },
+  DOWNSIZE: { border: "border-amber-500/40", bg: "bg-amber-500/10", text: "text-amber-400" },
+  REPLACE: { border: "border-orange-500/40", bg: "bg-orange-500/10", text: "text-orange-400" },
+  KILL: { border: "border-red-500/40", bg: "bg-red-500/10", text: "text-red-400" },
 };
 
 export function DefenseFilePanel({ workflow, engagementId }: Props) {
@@ -204,13 +204,13 @@ export function DefenseFilePanel({ workflow, engagementId }: Props) {
           </div>
 
           {sendError && (
-            <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+            <p className="text-sm text-red-400 bg-red-950/30 border border-red-800 rounded px-3 py-2">
               {sendError}
             </p>
           )}
 
           {!investigationComplete && (
-            <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded px-3 py-2">
+            <p className="text-xs text-amber-400 bg-amber-950/20 border border-amber-700 rounded px-3 py-2">
               Complete the Decision Governance Review before sending.
             </p>
           )}

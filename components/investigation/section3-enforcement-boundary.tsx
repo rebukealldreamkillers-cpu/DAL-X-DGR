@@ -26,21 +26,21 @@ const SUITABILITY_OPTIONS: { value: Suitability; label: string; description: str
     label: "Suitable",
     description: "A defined integration point and downstream validation point exist.",
     style: "border-border hover:border-foreground/30",
-    activeStyle: "border-emerald-400 bg-emerald-50 text-emerald-800",
+    activeStyle: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
   },
   {
     value: "PREREQUISITES_REQUIRED",
     label: "Prerequisites required",
     description: "DAL-X may fit after a named issue is resolved.",
     style: "border-border hover:border-foreground/30",
-    activeStyle: "border-amber-400 bg-amber-50 text-amber-800",
+    activeStyle: "border-amber-500/40 bg-amber-500/10 text-amber-400",
   },
   {
     value: "NOT_SUITABLE",
     label: "Not suitable",
     description: "No reliable integration or enforcement point exists.",
     style: "border-border hover:border-foreground/30",
-    activeStyle: "border-red-400 bg-red-50 text-red-800",
+    activeStyle: "border-red-500/40 bg-red-500/10 text-red-400",
   },
 ];
 
@@ -182,7 +182,7 @@ export function Section3EnforcementBoundary({
 
       {/* Conditional: NOT_SUITABLE guidance */}
       {form.dalxSuitability === "NOT_SUITABLE" && (
-        <div className="rounded-md border border-red-200 bg-red-50 px-3 py-2.5 text-xs text-red-800 space-y-1">
+        <div className="rounded-md border border-red-800 bg-red-950/30 px-3 py-2.5 text-xs text-red-300 space-y-1">
           <p className="font-medium">Sponsor decision required.</p>
           <p>Record the sponsor's choice: Suspend the consequential execution, establish a reliable enforcement boundary, or record an override accepting continued operation without that boundary. The enterprise owns the operating decision.</p>
         </div>
@@ -233,7 +233,7 @@ export function Section3EnforcementBoundary({
         </div>
       )}
 
-      {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</p>}
+      {error && <p className="text-sm text-red-400 bg-red-950/30 border border-red-800 rounded px-3 py-2">{error}</p>}
 
       <div className="flex gap-2 flex-wrap">
         <Button variant="outline" size="sm" onClick={save} disabled={saving}>

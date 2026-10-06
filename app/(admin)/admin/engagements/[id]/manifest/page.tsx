@@ -12,16 +12,16 @@ import type { ManifestJson, ManifestAgentEntry } from "@/lib/manifests";
 export const dynamic = "force-dynamic";
 
 const MANIFEST_STATUS_CONFIG: Record<string, { label: string; class: string }> = {
-  PROPOSED: { label: "Proposed", class: "bg-blue-50 text-blue-700 border-blue-200" },
-  SIGNED: { label: "Signed", class: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+  PROPOSED: { label: "Proposed", class: "bg-blue-500/10 text-blue-400 border-blue-500/30" },
+  SIGNED: { label: "Signed", class: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" },
   SUPERSEDED: { label: "Superseded", class: "bg-muted text-muted-foreground border-border" },
 };
 
 const DISPOSITION_STYLES: Record<string, { border: string; bg: string; text: string }> = {
-  KEEP: { border: "border-emerald-400", bg: "bg-emerald-50", text: "text-emerald-800" },
-  DOWNSIZE: { border: "border-amber-400", bg: "bg-amber-50", text: "text-amber-800" },
-  REPLACE: { border: "border-orange-400", bg: "bg-orange-50", text: "text-orange-800" },
-  KILL: { border: "border-red-400", bg: "bg-red-50", text: "text-red-800" },
+  KEEP: { border: "border-emerald-500/40", bg: "bg-emerald-500/10", text: "text-emerald-400" },
+  DOWNSIZE: { border: "border-amber-500/40", bg: "bg-amber-500/10", text: "text-amber-400" },
+  REPLACE: { border: "border-orange-500/40", bg: "bg-orange-500/10", text: "text-orange-400" },
+  KILL: { border: "border-red-500/40", bg: "bg-red-500/10", text: "text-red-400" },
 };
 
 export default async function ManifestPage({
@@ -183,7 +183,7 @@ export default async function ManifestPage({
                               </span>
                             )}
                             {agent.enforcementReady && (
-                              <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-emerald-700 border-emerald-200 bg-emerald-50">
+                              <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-emerald-400 border-emerald-500/30 bg-emerald-500/10">
                                 enforcement ready
                               </Badge>
                             )}
@@ -193,10 +193,10 @@ export default async function ManifestPage({
                       </div>
 
                       {/* Default execution rule */}
-                      <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2.5 space-y-1">
+                      <div className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2.5 space-y-1">
                         <div className="flex items-center gap-1.5">
-                          <Shield className="w-3 h-3 text-slate-500" />
-                          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+                          <Shield className="w-3 h-3 text-zinc-400" />
+                          <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
                             Default execution rule
                           </p>
                         </div>
@@ -221,12 +221,12 @@ export default async function ManifestPage({
                                     <span
                                       className={`px-1.5 py-0.5 rounded text-[10px] font-medium border ${
                                         ec.authority.level === "AUTO"
-                                          ? "border-emerald-300 bg-emerald-50 text-emerald-700"
+                                          ? "border-emerald-500/40 bg-emerald-500/10 text-emerald-400"
                                           : ec.authority.level === "REVIEW"
-                                            ? "border-blue-300 bg-blue-50 text-blue-700"
+                                            ? "border-blue-500/40 bg-blue-500/10 text-blue-400"
                                             : ec.authority.level === "ESCALATE"
-                                              ? "border-amber-300 bg-amber-50 text-amber-700"
-                                              : "border-red-300 bg-red-50 text-red-700"
+                                              ? "border-amber-500/40 bg-amber-500/10 text-amber-400"
+                                              : "border-red-500/40 bg-red-500/10 text-red-400"
                                       }`}
                                     >
                                       {ec.authority.level}

@@ -189,7 +189,7 @@ export function InvestigationWorkspace({ agentId, investigation: initial }: Prop
                       <span className="text-xs font-mono text-muted-foreground">S{s.num}</span>
                       <span className="text-sm font-medium">{s.title}</span>
                       {done && (
-                        <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-emerald-700 border-emerald-200 bg-emerald-50">
+                        <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-emerald-400 border-emerald-500/30 bg-emerald-500/10">
                           complete
                         </Badge>
                       )}

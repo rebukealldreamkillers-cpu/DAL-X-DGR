@@ -6,10 +6,10 @@ import { cn } from "@/lib/utils";
 type Posture = "KEEP" | "DOWNSIZE" | "REPLACE" | "KILL";
 
 const POSTURE_STYLES: Record<Posture, string> = {
-  KEEP: "bg-emerald-100 text-emerald-800 border-emerald-200",
-  DOWNSIZE: "bg-amber-100 text-amber-800 border-amber-200",
-  REPLACE: "bg-orange-100 text-orange-800 border-orange-200",
-  KILL: "bg-red-100 text-red-800 border-red-200",
+  KEEP: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+  DOWNSIZE: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+  REPLACE: "bg-orange-500/10 text-orange-400 border-orange-500/30",
+  KILL: "bg-red-500/10 text-red-400 border-red-500/30",
 };
 
 const POSTURE_LABELS: Record<Posture, string> = {

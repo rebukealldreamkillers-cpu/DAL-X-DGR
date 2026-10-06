@@ -29,10 +29,10 @@ type Props = {
 };
 
 const DISPOSITION_STYLES: Record<Disposition, { border: string; bg: string; text: string; label: string }> = {
-  KEEP: { border: "border-emerald-400", bg: "bg-emerald-50", text: "text-emerald-800", label: "KEEP" },
-  DOWNSIZE: { border: "border-amber-400", bg: "bg-amber-50", text: "text-amber-800", label: "DOWNSIZE" },
-  REPLACE: { border: "border-orange-400", bg: "bg-orange-50", text: "text-orange-800", label: "REPLACE" },
-  KILL: { border: "border-red-400", bg: "bg-red-50", text: "text-red-800", label: "KILL" },
+  KEEP: { border: "border-emerald-500/40", bg: "bg-emerald-500/10", text: "text-emerald-400", label: "KEEP" },
+  DOWNSIZE: { border: "border-amber-500/40", bg: "bg-amber-500/10", text: "text-amber-400", label: "DOWNSIZE" },
+  REPLACE: { border: "border-orange-500/40", bg: "bg-orange-500/10", text: "text-orange-400", label: "REPLACE" },
+  KILL: { border: "border-red-500/40", bg: "bg-red-500/10", text: "text-red-400", label: "KILL" },
 };
 
 function DispositionBadge({ disposition }: { disposition: Disposition }) {
@@ -83,7 +83,7 @@ export function RegistryTable({ workflows }: Props) {
                   {complete && (
                     <Badge
                       variant="outline"
-                      className="text-[10px] h-4 px-1.5 text-emerald-700 border-emerald-200 bg-emerald-50"
+                      className="text-[10px] h-4 px-1.5 text-emerald-400 border-emerald-500/30 bg-emerald-500/10"
                     >
                       DGR complete
                     </Badge>
@@ -122,7 +122,7 @@ export function RegistryTable({ workflows }: Props) {
             {expanded && (
               <div className="px-5 pb-5 border-t bg-muted/10 pt-4 space-y-4">
                 {!inv?.completedAt && (
-                  <div className="rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5 text-xs text-amber-800">
+                  <div className="rounded-md border border-amber-700 bg-amber-950/20 px-3 py-2.5 text-xs text-amber-300">
                     Decision Governance Review not yet complete. Open the agent record to continue.
                   </div>
                 )}

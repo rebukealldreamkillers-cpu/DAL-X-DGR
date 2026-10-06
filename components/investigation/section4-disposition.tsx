@@ -20,10 +20,10 @@ type Props = {
 };
 
 const DISPOSITION_STYLES: Record<Disposition, { border: string; bg: string; text: string; label: string; description: string }> = {
-  KEEP: { border: "border-emerald-400", bg: "bg-emerald-50", text: "text-emerald-800", label: "KEEP", description: "Investment justified — continue within approved boundary" },
-  DOWNSIZE: { border: "border-amber-400", bg: "bg-amber-50", text: "text-amber-800", label: "DOWNSIZE", description: "Requirement real — mechanism overbuilt for it" },
-  REPLACE: { border: "border-orange-400", bg: "bg-orange-50", text: "text-orange-800", label: "REPLACE", description: "Mechanism lacks evidence — revoke and implement alternative" },
-  KILL: { border: "border-red-400", bg: "bg-red-50", text: "text-red-800", label: "KILL", description: "No evidence, no viable alternative — revoke all authority" },
+  KEEP: { border: "border-emerald-500/40", bg: "bg-emerald-500/10", text: "text-emerald-400", label: "KEEP", description: "Investment justified — continue within approved boundary" },
+  DOWNSIZE: { border: "border-amber-500/40", bg: "bg-amber-500/10", text: "text-amber-400", label: "DOWNSIZE", description: "Requirement real — mechanism overbuilt for it" },
+  REPLACE: { border: "border-orange-500/40", bg: "bg-orange-500/10", text: "text-orange-400", label: "REPLACE", description: "Mechanism lacks evidence — revoke and implement alternative" },
+  KILL: { border: "border-red-500/40", bg: "bg-red-500/10", text: "text-red-400", label: "KILL", description: "No evidence, no viable alternative — revoke all authority" },
 };
 
 export function Section4Disposition({ agentId, investigation, completedAt, onComplete, onUpdate }: Props) {
@@ -225,7 +225,7 @@ export function Section4Disposition({ agentId, investigation, completedAt, onCom
         <Input className="h-8 text-sm max-w-xs" placeholder="Your name" value={form.analystName} onChange={(e) => update({ analystName: e.target.value })} />
       </div>
 
-      {error && <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">{error}</p>}
+      {error && <p className="text-sm text-red-400 bg-red-950/30 border border-red-800 rounded px-3 py-2">{error}</p>}
 
       <div className="flex gap-2 flex-wrap">
         <Button variant="outline" size="sm" onClick={save} disabled={saving}>

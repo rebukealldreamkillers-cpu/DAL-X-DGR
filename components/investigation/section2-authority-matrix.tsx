@@ -42,10 +42,10 @@ const EMPTY_AUTHORITY: AuthorityForm = {
 };
 
 const LEVEL_STYLES: Record<AuthorityLevel, { border: string; bg: string; text: string; label: string }> = {
-  AUTO: { border: "border-emerald-400", bg: "bg-emerald-50", text: "text-emerald-800", label: "Automatic" },
-  REVIEW: { border: "border-blue-400", bg: "bg-blue-50", text: "text-blue-800", label: "Review required" },
-  ESCALATE: { border: "border-amber-400", bg: "bg-amber-50", text: "text-amber-800", label: "Escalation required" },
-  DENY: { border: "border-red-400", bg: "bg-red-50", text: "text-red-800", label: "Denied" },
+  AUTO: { border: "border-emerald-500/40", bg: "bg-emerald-500/10", text: "text-emerald-400", label: "Automatic" },
+  REVIEW: { border: "border-blue-500/40", bg: "bg-blue-500/10", text: "text-blue-400", label: "Review required" },
+  ESCALATE: { border: "border-amber-500/40", bg: "bg-amber-500/10", text: "text-amber-400", label: "Escalation required" },
+  DENY: { border: "border-red-500/40", bg: "bg-red-500/10", text: "text-red-400", label: "Denied" },
 };
 
 function AuthorityLevelBadge({ level }: { level: AuthorityLevel }) {
@@ -154,8 +154,8 @@ export function Section2AuthorityMatrix({
         Assign authority to each execution class. Any class not assigned a level will be treated as DENIED at runtime. An AUTO class must name the policy or rule permitting automatic authorization — an empty authority field does not imply self-authorization.
       </div>
 
-      <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-        <strong>Default rule:</strong> any execution class not listed in the authority matrix is DENIED.
+      <div className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-400">
+        <strong className="text-zinc-300">Default rule:</strong> any execution class not listed in the authority matrix is DENIED.
       </div>
 
       <div className="border rounded-lg overflow-hidden divide-y">

@@ -86,7 +86,7 @@ export default function InquiryPage() {
           </p>
         </div>
 
-        <div className="bg-background border rounded-lg p-7 shadow-sm space-y-6">
+        <div className="bg-card border rounded-lg p-7 space-y-6">
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
             {/* Company name */}
             <div className="space-y-1.5">
@@ -152,7 +152,7 @@ export default function InquiryPage() {
             </div>
 
             {serverError && (
-              <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded px-3 py-2">
+              <p className="text-sm text-red-400 bg-red-950/30 border border-red-800 rounded px-3 py-2">
                 {serverError}
               </p>
             )}

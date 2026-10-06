@@ -68,7 +68,7 @@ export default async function EngagementDetailPage({
             <h1 className="text-2xl font-semibold">{engagement.companyName}</h1>
             <StageBadge stage={stage} />
             {!engagement.ndaAcknowledgedAt && (
-              <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-700 border-amber-200">
+              <Badge variant="outline" className="text-[10px] bg-amber-500/10 text-amber-400 border-amber-500/30">
                 NDA pending
               </Badge>
             )}
@@ -103,10 +103,10 @@ export default async function EngagementDetailPage({
 
       {/* Pending actions */}
       {actions.length > 0 && (
-        <div className="border border-amber-200 bg-amber-50 rounded-lg px-4 py-3 space-y-1">
-          <p className="text-xs font-semibold text-amber-800 uppercase tracking-wide">Action required</p>
+        <div className="border border-amber-700 bg-amber-950/20 rounded-lg px-4 py-3 space-y-1">
+          <p className="text-xs font-semibold text-amber-400 uppercase tracking-wide">Action required</p>
           {actions.map((action, i) => (
-            <div key={i} className="flex items-start gap-2 text-sm text-amber-900">
+            <div key={i} className="flex items-start gap-2 text-sm text-amber-300">
               <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
               <span>{action}</span>
             </div>
@@ -152,8 +152,8 @@ export default async function EngagementDetailPage({
       {(stage === "REGISTRY" || stage === "DEFENSE_FILES" || stage === "CLOSED") && (() => {
         const latestManifest = (engagement.governanceManifests ?? [])[0];
         const manifestStatusCfg: Record<string, { label: string; class: string }> = {
-          PROPOSED: { label: "Proposed", class: "bg-blue-50 text-blue-700 border-blue-200" },
-          SIGNED: { label: "Signed", class: "bg-emerald-50 text-emerald-700 border-emerald-200" },
+          PROPOSED: { label: "Proposed", class: "bg-blue-500/10 text-blue-400 border-blue-500/30" },
+          SIGNED: { label: "Signed", class: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30" },
           SUPERSEDED: { label: "Superseded", class: "bg-muted text-muted-foreground border-border" },
         };
         const cfg = latestManifest ? manifestStatusCfg[latestManifest.manifestStatus] : null;

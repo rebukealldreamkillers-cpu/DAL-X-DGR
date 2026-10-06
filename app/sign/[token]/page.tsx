@@ -6,17 +6,17 @@ import { CheckCircle2, AlertTriangle, Shield } from "lucide-react";
 export const dynamic = "force-dynamic";
 
 const DISPOSITION_STYLES: Record<string, { border: string; bg: string; text: string }> = {
-  KEEP: { border: "border-emerald-400", bg: "bg-emerald-50", text: "text-emerald-800" },
-  DOWNSIZE: { border: "border-amber-400", bg: "bg-amber-50", text: "text-amber-800" },
-  REPLACE: { border: "border-orange-400", bg: "bg-orange-50", text: "text-orange-800" },
-  KILL: { border: "border-red-400", bg: "bg-red-50", text: "text-red-800" },
+  KEEP: { border: "border-emerald-500/40", bg: "bg-emerald-500/10", text: "text-emerald-400" },
+  DOWNSIZE: { border: "border-amber-500/40", bg: "bg-amber-500/10", text: "text-amber-400" },
+  REPLACE: { border: "border-orange-500/40", bg: "bg-orange-500/10", text: "text-orange-400" },
+  KILL: { border: "border-red-500/40", bg: "bg-red-500/10", text: "text-red-400" },
 };
 
 const AUTHORITY_LEVEL_STYLES: Record<string, string> = {
-  AUTO: "border-emerald-300 bg-emerald-50 text-emerald-700",
-  REVIEW: "border-blue-300 bg-blue-50 text-blue-700",
-  ESCALATE: "border-amber-300 bg-amber-50 text-amber-700",
-  DENY: "border-red-300 bg-red-50 text-red-700",
+  AUTO: "border-emerald-500/40 bg-emerald-500/10 text-emerald-400",
+  REVIEW: "border-blue-500/40 bg-blue-500/10 text-blue-400",
+  ESCALATE: "border-amber-500/40 bg-amber-500/10 text-amber-400",
+  DENY: "border-red-500/40 bg-red-500/10 text-red-400",
 };
 
 export default async function SignPage({
@@ -96,11 +96,11 @@ export default async function SignPage({
         </div>
 
         {/* Three-act framing */}
-        <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3 space-y-1">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+        <div className="rounded-md border border-zinc-700 bg-zinc-900 px-4 py-3 space-y-1">
+          <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
             Act 2 of 3 — Executive authorization
           </p>
-          <p className="text-xs text-slate-700 leading-relaxed">
+          <p className="text-xs text-zinc-300 leading-relaxed">
             Jochanni Labs has completed the governance assessment (Act 1). Your signature
             below authorizes the governance decision and enables DAL-X runtime enforcement
             (Act 3). You may accept the issued decision or record a departure with rationale.
@@ -142,8 +142,8 @@ export default async function SignPage({
               <Shield className="w-4 h-4 text-muted-foreground" />
               <p className="text-sm font-semibold">Execution Class Authority Matrix</p>
             </div>
-            <div className="rounded-md border border-slate-200 bg-slate-50 px-3 py-2 text-xs text-slate-600">
-              <strong>Default rule:</strong> any execution class not listed below is DENIED at runtime.
+            <div className="rounded-md border border-zinc-700 bg-zinc-900 px-3 py-2 text-xs text-zinc-400">
+              <strong className="text-zinc-300">Default rule:</strong> any execution class not listed below is DENIED at runtime.
             </div>
             <div className="border rounded-lg divide-y text-xs overflow-hidden">
               {executionClasses.map((ec) => (
@@ -169,7 +169,7 @@ export default async function SignPage({
                     </p>
                   )}
                   {ec.validationStatus === "NOT_VALIDATED" && (
-                    <p className="text-amber-700">Not yet validated</p>
+                    <p className="text-amber-400">Not yet validated</p>
                   )}
                 </div>
               ))}

@@ -116,7 +116,7 @@ export function ManifestSignButton({ engagementId, manifestId }: Props) {
       </div>
 
       {error && (
-        <p className="text-xs text-red-600 bg-red-50 border border-red-200 rounded px-2.5 py-1.5">
+        <p className="text-xs text-red-400 bg-red-950/30 border border-red-800 rounded px-2.5 py-1.5">
           {error}
         </p>
       )}

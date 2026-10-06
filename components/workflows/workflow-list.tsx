@@ -60,10 +60,10 @@ const EVIDENCE_LABELS: Record<EvidenceStatus, { label: string; cls: string }> = 
 };
 
 const STATUS_STYLES: Record<RegistrationStatus, string> = {
-  ACTIVE: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  SUSPENDED: "bg-amber-50 text-amber-700 border-amber-200",
-  DECOMMISSIONING: "bg-orange-50 text-orange-700 border-orange-200",
-  CLOSED: "bg-slate-50 text-slate-600 border-slate-200",
+  ACTIVE: "bg-emerald-500/10 text-emerald-400 border-emerald-500/30",
+  SUSPENDED: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+  DECOMMISSIONING: "bg-orange-500/10 text-orange-400 border-orange-500/30",
+  CLOSED: "bg-zinc-700/30 text-zinc-400 border-zinc-600/30",
 };
 
 export function WorkflowList({ engagementId, workflows: initial, stage }: Props) {
@@ -219,7 +219,7 @@ export function WorkflowList({ engagementId, workflows: initial, stage }: Props)
                       {evidenceInfo.label}
                     </span>
                     {agent.investigation?.completedAt && (
-                      <Badge variant="outline" className="text-[10px] bg-violet-50 text-violet-700 border-violet-200">
+                      <Badge variant="outline" className="text-[10px] bg-violet-500/10 text-violet-400 border-violet-500/30">
                         DGR complete{agent.investigation.disposition ? ` · ${agent.investigation.disposition}` : ""}
                       </Badge>
                     )}
@@ -229,9 +229,9 @@ export function WorkflowList({ engagementId, workflows: initial, stage }: Props)
                 {/* Actions */}
                 <div className="flex items-center gap-1 flex-shrink-0 ml-2">
                   {isDeleting ? (
-                    <div className="flex items-center gap-2 bg-red-50 border border-red-200 rounded px-2 py-1">
-                      <AlertTriangle className="w-3.5 h-3.5 text-red-600" />
-                      <span className="text-xs text-red-700">Remove?</span>
+                    <div className="flex items-center gap-2 bg-red-950/30 border border-red-800 rounded px-2 py-1">
+                      <AlertTriangle className="w-3.5 h-3.5 text-red-400" />
+                      <span className="text-xs text-red-400">Remove?</span>
                       <button
                         onClick={() => deleteAgent(agent.id)}
                         disabled={isLoading}
@@ -260,7 +260,7 @@ export function WorkflowList({ engagementId, workflows: initial, stage }: Props)
                           </ButtonLink>
                           <button
                             onClick={() => setConfirmDeleteId(agent.id)}
-                            className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-600 hover:bg-red-50 opacity-0 group-hover:opacity-100 transition-all"
+                            className="h-7 w-7 flex items-center justify-center rounded-md text-muted-foreground hover:text-red-400 hover:bg-red-500/10 opacity-0 group-hover:opacity-100 transition-all"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>

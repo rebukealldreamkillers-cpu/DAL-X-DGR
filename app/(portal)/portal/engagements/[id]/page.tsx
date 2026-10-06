@@ -11,10 +11,10 @@ import type { ManifestJson } from "@/lib/manifests";
 export const dynamic = "force-dynamic";
 
 const DISPOSITION_STYLES: Record<string, { border: string; bg: string; text: string }> = {
-  KEEP: { border: "border-emerald-400", bg: "bg-emerald-50", text: "text-emerald-800" },
-  DOWNSIZE: { border: "border-amber-400", bg: "bg-amber-50", text: "text-amber-800" },
-  REPLACE: { border: "border-orange-400", bg: "bg-orange-50", text: "text-orange-800" },
-  KILL: { border: "border-red-400", bg: "bg-red-50", text: "text-red-800" },
+  KEEP: { border: "border-emerald-500/40", bg: "bg-emerald-500/10", text: "text-emerald-400" },
+  DOWNSIZE: { border: "border-amber-500/40", bg: "bg-amber-500/10", text: "text-amber-400" },
+  REPLACE: { border: "border-orange-500/40", bg: "bg-orange-500/10", text: "text-orange-400" },
+  KILL: { border: "border-red-500/40", bg: "bg-red-500/10", text: "text-red-400" },
 };
 
 export default async function PortalEngagementPage({
@@ -84,11 +84,11 @@ export default async function PortalEngagementPage({
       </div>
 
       {/* Three-act framing */}
-      <div className="rounded-md border border-slate-200 bg-slate-50 px-4 py-3 space-y-1">
-        <p className="text-[10px] font-semibold uppercase tracking-wide text-slate-500">
+      <div className="rounded-md border border-zinc-700 bg-zinc-900 px-4 py-3 space-y-1">
+        <p className="text-[10px] font-semibold uppercase tracking-wide text-zinc-400">
           How this works
         </p>
-        <p className="text-xs text-slate-700 leading-relaxed">
+        <p className="text-xs text-zinc-300 leading-relaxed">
           Jochanni Labs has completed the governance assessment for each AI agent in scope
           (Act 1). For each agent below, you may authorize or record a departure from the
           proposed governance decision (Act 2). Your decision enables DAL-X to enforce the
@@ -106,8 +106,8 @@ export default async function PortalEngagementPage({
                 variant="outline"
                 className={
                   latestManifest.manifestStatus === "SIGNED"
-                    ? "text-[10px] bg-emerald-50 text-emerald-700 border-emerald-200"
-                    : "text-[10px] bg-blue-50 text-blue-700 border-blue-200"
+                    ? "text-[10px] bg-emerald-500/10 text-emerald-400 border-emerald-500/30"
+                    : "text-[10px] bg-blue-500/10 text-blue-400 border-blue-500/30"
                 }
               >
                 {latestManifest.manifestStatus === "SIGNED" ? "Signed" : "Proposed"}
@@ -172,7 +172,7 @@ export default async function PortalEngagementPage({
                         {needsSignature && (
                           <Badge
                             variant="outline"
-                            className="text-[10px] h-4 px-1.5 text-amber-700 border-amber-200 bg-amber-50"
+                            className="text-[10px] h-4 px-1.5 text-amber-400 border-amber-500/30 bg-amber-500/10"
                           >
                             Signature required
                           </Badge>

@@ -146,9 +146,9 @@ export function Section1ExecutionClasses({
                       <span className="text-sm font-medium">{ec.action}</span>
                       <span className="text-xs text-muted-foreground">→ {ec.target}</span>
                       {ec.validationStatus === "VALIDATED" ? (
-                        <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-emerald-700 border-emerald-200 bg-emerald-50">Validated</Badge>
+                        <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-emerald-400 border-emerald-500/30 bg-emerald-500/10">Validated</Badge>
                       ) : (
-                        <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-amber-700 border-amber-200 bg-amber-50">Not validated</Badge>
+                        <Badge variant="outline" className="text-[10px] h-4 px-1.5 text-amber-400 border-amber-500/30 bg-amber-500/10">Not validated</Badge>
                       )}
                     </div>
                     <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">Scope: {ec.scope}</p>
@@ -276,9 +276,9 @@ export function Section1ExecutionClasses({
 
       {/* Not fully validated warning */}
       {anyNotValidated && (
-        <div className="flex items-start gap-2 rounded-md border border-amber-200 bg-amber-50 px-3 py-2.5">
-          <AlertTriangle className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
-          <p className="text-xs text-amber-800">
+        <div className="flex items-start gap-2 rounded-md border border-amber-700 bg-amber-950/20 px-3 py-2.5">
+          <AlertTriangle className="w-4 h-4 text-amber-400 flex-shrink-0 mt-0.5" />
+          <p className="text-xs text-amber-300">
             Some execution classes are not yet validated. If validation cannot be confirmed, the record must state: <em>Execution classes not fully validated. Additional technical review required.</em>
           </p>
         </div>

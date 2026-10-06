@@ -6,11 +6,11 @@ import { cn } from "@/lib/utils";
 type Stage = "CENSUS" | "INVESTIGATION" | "REGISTRY" | "DEFENSE_FILES" | "CLOSED";
 
 const STAGE_STYLES: Record<Stage, string> = {
-  CENSUS: "bg-blue-100 text-blue-800 border-blue-200",
-  INVESTIGATION: "bg-violet-100 text-violet-800 border-violet-200",
-  REGISTRY: "bg-amber-100 text-amber-800 border-amber-200",
-  DEFENSE_FILES: "bg-orange-100 text-orange-800 border-orange-200",
-  CLOSED: "bg-zinc-100 text-zinc-700 border-zinc-200",
+  CENSUS: "bg-blue-500/10 text-blue-400 border-blue-500/30",
+  INVESTIGATION: "bg-violet-500/10 text-violet-400 border-violet-500/30",
+  REGISTRY: "bg-amber-500/10 text-amber-400 border-amber-500/30",
+  DEFENSE_FILES: "bg-orange-500/10 text-orange-400 border-orange-500/30",
+  CLOSED: "bg-zinc-700/30 text-zinc-400 border-zinc-600/30",
 };
 
 const STAGE_LABELS: Record<Stage, string> = {
