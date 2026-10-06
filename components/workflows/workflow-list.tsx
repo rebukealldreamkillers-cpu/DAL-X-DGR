@@ -34,7 +34,7 @@ type AgentRow = {
   existingEvidenceStatus: EvidenceStatus | null;
   registrationStatus?: RegistrationStatus | null;
   sortOrder: number;
-  investigation?: { completedAt: string | null; disposition?: string | null } | null;
+  investigation?: { completedAt: string | null; disposition?: string | null; sectionsComplete?: number | null } | null;
   defenseFile?: { status: string } | null;
 };
 
@@ -218,11 +218,15 @@ export function WorkflowList({ engagementId, workflows: initial, stage }: Props)
                     <span className={cn("text-xs font-medium", evidenceInfo.cls)}>
                       {evidenceInfo.label}
                     </span>
-                    {agent.investigation?.completedAt && (
+                    {agent.investigation?.completedAt ? (
                       <Badge variant="outline" className="text-[10px] bg-violet-500/10 text-violet-400 border-violet-500/30">
                         DGR complete{agent.investigation.disposition ? ` · ${agent.investigation.disposition}` : ""}
                       </Badge>
-                    )}
+                    ) : agent.investigation ? (
+                      <span className="text-xs text-muted-foreground">
+                        {agent.investigation.sectionsComplete ?? 0}/4 sections
+                      </span>
+                    ) : null}
                   </div>
                 </div>
 

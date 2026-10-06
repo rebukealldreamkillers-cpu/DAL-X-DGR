@@ -7,7 +7,7 @@ import { SendCheckpointButton } from "@/components/engagements/send-checkpoint-b
 import { WorkflowList } from "@/components/workflows/workflow-list";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { AlertCircle, ChevronRight, FileCheck2 } from "lucide-react";
+import { AlertCircle, CheckCircle2, Circle, ChevronRight, FileCheck2 } from "lucide-react";
 import Link from "next/link";
 
 export const dynamic = "force-dynamic";
@@ -47,6 +47,12 @@ export default async function EngagementDetailPage({
       ? {
           completedAt: w.investigation.completedAt?.toISOString() ?? null,
           disposition: w.investigation.disposition ?? null,
+          sectionsComplete: [
+            w.investigation.section1CompletedAt,
+            w.investigation.section2CompletedAt,
+            w.investigation.section3CompletedAt,
+            w.investigation.section4CompletedAt,
+          ].filter(Boolean).length,
         }
       : null,
     defenseFile: w.defenseFile ? { status: w.defenseFile.status } : null,
@@ -98,7 +104,16 @@ export default async function EngagementDetailPage({
 
       {/* Stage tracker */}
       <div className="border rounded-lg p-6 bg-background">
-        <StageTracker currentStage={stage} />
+        <StageTracker
+          currentStage={stage}
+          timestamps={{
+            census: engagement.createdAt,
+            investigation: engagement.censusCompletedAt,
+            registry: engagement.investigationCompletedAt,
+            defenseFiles: engagement.registryCompletedAt,
+            closed: engagement.defenseFilesCompletedAt,
+          }}
+        />
       </div>
 
       {/* Pending actions */}
@@ -113,6 +128,61 @@ export default async function EngagementDetailPage({
           ))}
         </div>
       )}
+
+      {/* Stage gate checklist */}
+      {stage !== "CLOSED" && (() => {
+        const totalAgents = engagement.registeredAgents.length;
+        const investigationsComplete = engagement.registeredAgents.filter((w) => !!w.investigation?.completedAt).length;
+        const authorizationsComplete = engagement.registeredAgents.filter(
+          (w) => w.defenseFile?.status === "SIGNED" || w.defenseFile?.status === "OVERRIDDEN",
+        ).length;
+
+        const NEXT_LABEL: Record<string, string> = {
+          CENSUS: "Investigation",
+          INVESTIGATION: "Registry",
+          REGISTRY: "Defense Files",
+          DEFENSE_FILES: "Closed",
+        };
+
+        const criteriaByStage: Record<string, Array<{ met: boolean; label: string }>> = {
+          CENSUS: [
+            { met: totalAgents > 0, label: `${totalAgents} agent${totalAgents !== 1 ? "s" : ""} registered` },
+            { met: !!engagement.ndaAcknowledgedAt, label: "NDA acknowledged" },
+          ],
+          INVESTIGATION: [
+            { met: investigationsComplete === totalAgents && totalAgents > 0, label: `${investigationsComplete}/${totalAgents} investigations complete` },
+          ],
+          REGISTRY: [
+            { met: investigationsComplete === totalAgents && totalAgents > 0, label: `${investigationsComplete}/${totalAgents} investigations complete` },
+          ],
+          DEFENSE_FILES: [
+            { met: authorizationsComplete === totalAgents && totalAgents > 0, label: `${authorizationsComplete}/${totalAgents} defense files authorized` },
+          ],
+        };
+
+        const criteria = criteriaByStage[stage] ?? [];
+        const allMet = criteria.every((c) => c.met);
+
+        return (
+          <div className={`border rounded-lg px-4 py-3 space-y-2 ${allMet ? "border-emerald-700/40 bg-emerald-500/5" : "bg-muted/10"}`}>
+            <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+              Gate · Advance to {NEXT_LABEL[stage]}
+            </p>
+            <div className="space-y-1">
+              {criteria.map((item, i) => (
+                <div key={i} className="flex items-center gap-2 text-xs">
+                  {item.met ? (
+                    <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+                  ) : (
+                    <Circle className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0" />
+                  )}
+                  <span className={item.met ? "text-foreground" : "text-muted-foreground"}>{item.label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        );
+      })()}
 
       <Separator />
 

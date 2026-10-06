@@ -5,12 +5,20 @@ import { Check } from "lucide-react";
 
 type Stage = "CENSUS" | "INVESTIGATION" | "REGISTRY" | "DEFENSE_FILES" | "CLOSED";
 
+type StageTimestamps = {
+  census?: Date | string | null;
+  investigation?: Date | string | null;
+  registry?: Date | string | null;
+  defenseFiles?: Date | string | null;
+  closed?: Date | string | null;
+};
+
 const STEPS = [
-  { stage: "CENSUS" as Stage, week: 1, label: "Pipeline Census", desc: "Map all in-flight AI workflows" },
-  { stage: "INVESTIGATION" as Stage, week: 2, label: "Investigation", desc: "Six governing questions per workflow" },
-  { stage: "REGISTRY" as Stage, week: 3, label: "Decision Registry", desc: "One verdict per workflow" },
-  { stage: "DEFENSE_FILES" as Stage, week: 4, label: "Defense Files", desc: "Signed accountability records" },
-  { stage: "CLOSED" as Stage, week: 5, label: "Closed", desc: "Governance Manifest delivered" },
+  { stage: "CENSUS" as Stage, label: "Census", desc: "Map all in-flight AI workflows", tsKey: "census" as keyof StageTimestamps },
+  { stage: "INVESTIGATION" as Stage, label: "Investigation", desc: "Four-section governance investigation per agent", tsKey: "investigation" as keyof StageTimestamps },
+  { stage: "REGISTRY" as Stage, label: "Registry", desc: "One disposition per agent", tsKey: "registry" as keyof StageTimestamps },
+  { stage: "DEFENSE_FILES" as Stage, label: "Defense Files", desc: "Signed accountability records", tsKey: "defenseFiles" as keyof StageTimestamps },
+  { stage: "CLOSED" as Stage, label: "Closed", desc: "Governance Manifest delivered", tsKey: "closed" as keyof StageTimestamps },
 ];
 
 const ORDER: Stage[] = ["CENSUS", "INVESTIGATION", "REGISTRY", "DEFENSE_FILES", "CLOSED"];
@@ -19,7 +27,18 @@ function stageIndex(stage: Stage) {
   return ORDER.indexOf(stage);
 }
 
-export function StageTracker({ currentStage }: { currentStage: Stage }) {
+function fmtDate(d: Date | string | null | undefined): string | null {
+  if (!d) return null;
+  return new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" });
+}
+
+export function StageTracker({
+  currentStage,
+  timestamps,
+}: {
+  currentStage: Stage;
+  timestamps?: StageTimestamps;
+}) {
   const currentIdx = stageIndex(currentStage);
 
   return (
@@ -28,6 +47,7 @@ export function StageTracker({ currentStage }: { currentStage: Stage }) {
         const done = i < currentIdx;
         const active = i === currentIdx;
         const isLast = i === STEPS.length - 1;
+        const ts = timestamps ? fmtDate(timestamps[step.tsKey]) : null;
 
         return (
           <li key={step.stage} className="flex-1 flex flex-col items-center">
@@ -38,7 +58,7 @@ export function StageTracker({ currentStage }: { currentStage: Stage }) {
               {/* Circle */}
               <div
                 className={cn(
-                  "flex-shrink-0 w-8 h-8 rounded-full flex items-center justify-center border-2 text-xs font-semibold transition-colors",
+                  "flex-shrink-0 w-7 h-7 rounded-full flex items-center justify-center border-2 text-xs font-semibold transition-colors",
                   done
                     ? "bg-foreground border-foreground text-background"
                     : active
@@ -46,7 +66,7 @@ export function StageTracker({ currentStage }: { currentStage: Stage }) {
                     : "bg-background border-border text-muted-foreground",
                 )}
               >
-                {done ? <Check className="w-4 h-4" /> : <span>{step.week}</span>}
+                {done ? <Check className="w-3.5 h-3.5" /> : <span>{i + 1}</span>}
               </div>
 
               {/* Connector right */}
@@ -58,7 +78,11 @@ export function StageTracker({ currentStage }: { currentStage: Stage }) {
               <p className={cn("text-xs font-medium", active ? "text-foreground" : done ? "text-foreground" : "text-muted-foreground")}>
                 {step.label}
               </p>
-              <p className="text-[10px] text-muted-foreground leading-tight mt-0.5 hidden sm:block">{step.desc}</p>
+              {ts && (i <= currentIdx) ? (
+                <p className="text-[10px] text-muted-foreground mt-0.5">{ts}</p>
+              ) : (
+                <p className="text-[10px] text-muted-foreground leading-tight mt-0.5 hidden sm:block">{step.desc}</p>
+              )}
             </div>
           </li>
         );
