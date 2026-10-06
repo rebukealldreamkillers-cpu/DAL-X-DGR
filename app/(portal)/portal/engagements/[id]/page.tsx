@@ -4,8 +4,9 @@ import { getEngagement } from "@/lib/engagements";
 import { StageBadge } from "@/components/engagements/stage-badge";
 import { Separator } from "@/components/ui/separator";
 import { Badge } from "@/components/ui/badge";
-import { ChevronRight, CheckCircle2, Circle } from "lucide-react";
+import { ChevronRight, CheckCircle2, Circle, FileText } from "lucide-react";
 import Link from "next/link";
+import { cn } from "@/lib/utils";
 import type { ManifestJson } from "@/lib/manifests";
 
 export const dynamic = "force-dynamic";
@@ -61,6 +62,36 @@ export default async function PortalEngagementPage({
   )[0];
   const manifestJson = latestManifest?.manifestJson as ManifestJson | undefined;
 
+  // Governance summary stats
+  const totalAgents = engagement.registeredAgents.length;
+  const investigationsComplete = engagement.registeredAgents.filter(
+    (w) => !!w.investigation?.completedAt,
+  ).length;
+  const dispositionCounts = engagement.registeredAgents.reduce(
+    (acc, w) => {
+      const d = w.investigation?.disposition;
+      if (d) acc[d] = (acc[d] ?? 0) + 1;
+      return acc;
+    },
+    {} as Record<string, number>,
+  );
+  const authorizationsComplete = engagement.registeredAgents.filter(
+    (w) => w.defenseFile?.status === "SIGNED" || w.defenseFile?.status === "OVERRIDDEN",
+  ).length;
+
+  // Analyst name — take from first agent with one set
+  const analystName = engagement.registeredAgents
+    .map((w) => w.investigation?.analystName)
+    .find(Boolean) ?? null;
+
+  const STAGE_DESCRIPTION: Record<string, string> = {
+    CENSUS: "AI agents are being registered and catalogued. Governance investigations have not yet begun.",
+    INVESTIGATION: "Each agent is under a 4-section governance investigation. Decision records are being built.",
+    REGISTRY: "All investigations are complete. Governance decisions have been issued.",
+    DEFENSE_FILES: "Defense files have been issued. Sponsor authorization is required to activate DAL-X enforcement.",
+    CLOSED: "The governance review is complete. All defense files are authorized.",
+  };
+
   return (
     <div className="p-8 max-w-3xl mx-auto space-y-8">
       {/* Breadcrumb */}
@@ -70,17 +101,29 @@ export default async function PortalEngagementPage({
         <span className="text-foreground font-medium">{engagement.companyName}</span>
       </nav>
 
-      {/* Header */}
-      <div className="flex items-start justify-between gap-4">
+      {/* Dossier header */}
+      <div className="space-y-3">
         <div>
-          <div className="flex items-center gap-3">
-            <h1 className="text-xl font-semibold">{engagement.companyName}</h1>
-            <StageBadge stage={stage} />
+          <div className="flex items-center gap-2">
+            <FileText className="w-3.5 h-3.5 text-muted-foreground" />
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+              Governance Dossier
+            </span>
           </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            Decision Governance Review · AI agent governance assessment
+          <h1 className="text-xl font-semibold mt-1">{engagement.companyName}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">Decision Governance Review</p>
+        </div>
+        <div className="flex items-start gap-3 flex-wrap">
+          <StageBadge stage={stage} />
+          <p className="text-xs text-muted-foreground leading-relaxed max-w-lg">
+            {STAGE_DESCRIPTION[stage]}
           </p>
         </div>
+        {analystName && (
+          <p className="text-xs text-muted-foreground">
+            <span className="font-medium text-foreground">Analyst:</span> {analystName}
+          </p>
+        )}
       </div>
 
       {/* Three-act framing */}
@@ -135,6 +178,37 @@ export default async function PortalEngagementPage({
         </div>
       )}
 
+      {/* Governance summary — shown once we have agents */}
+      {totalAgents > 0 && stage !== "CENSUS" && (
+        <div className="border rounded-lg p-4 space-y-3 bg-muted/10">
+          <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            Governance summary
+          </p>
+          <div className="grid grid-cols-3 gap-4 text-sm">
+            <div>
+              <p className="text-lg font-semibold">{investigationsComplete}/{totalAgents}</p>
+              <p className="text-xs text-muted-foreground">Investigations complete</p>
+            </div>
+            {Object.keys(dispositionCounts).length > 0 && (
+              <div>
+                <p className="text-lg font-semibold">
+                  {Object.entries(dispositionCounts)
+                    .map(([d, n]) => `${n} ${d}`)
+                    .join(" · ")}
+                </p>
+                <p className="text-xs text-muted-foreground">Dispositions issued</p>
+              </div>
+            )}
+            {stage === "DEFENSE_FILES" || stage === "CLOSED" ? (
+              <div>
+                <p className="text-lg font-semibold">{authorizationsComplete}/{totalAgents}</p>
+                <p className="text-xs text-muted-foreground">Defense files authorized</p>
+              </div>
+            ) : null}
+          </div>
+        </div>
+      )}
+
       <Separator />
 
       {/* Agent decision records */}
@@ -150,6 +224,23 @@ export default async function PortalEngagementPage({
               const needsSignature = dfStatus === "SENT";
               const disposition = inv?.disposition;
               const dispStyle = disposition ? DISPOSITION_STYLES[disposition] : null;
+
+              const dalxSuitability = inv?.enforcementBoundary?.dalxSuitability;
+              const dalxLabel =
+                dalxSuitability === "SUITABLE"
+                  ? "DAL-X suitable"
+                  : dalxSuitability === "PREREQUISITES_REQUIRED"
+                  ? "prerequisites required"
+                  : dalxSuitability === "NOT_SUITABLE"
+                  ? "not suitable"
+                  : null;
+
+              const sectionsComplete = [
+                inv?.section1CompletedAt,
+                inv?.section2CompletedAt,
+                inv?.section3CompletedAt,
+                inv?.section4CompletedAt,
+              ].filter(Boolean).length;
 
               return (
                 <div key={w.id} className="px-5 py-4">
@@ -181,6 +272,30 @@ export default async function PortalEngagementPage({
                       <p className="text-xs text-muted-foreground mt-1 ml-6">
                         {w.businessOutcome}
                       </p>
+                      {/* Investigation meta row */}
+                      <div className="flex items-center gap-3 mt-1.5 ml-6">
+                        {inv?.completedAt ? (
+                          <span className="text-xs text-muted-foreground">Investigation complete</span>
+                        ) : inv ? (
+                          <span className="text-xs text-muted-foreground">
+                            Under investigation · {sectionsComplete}/4 sections
+                          </span>
+                        ) : null}
+                        {dalxLabel && (
+                          <span
+                            className={cn(
+                              "text-[10px] font-medium px-1.5 py-0.5 rounded border",
+                              dalxSuitability === "SUITABLE"
+                                ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-400"
+                                : dalxSuitability === "PREREQUISITES_REQUIRED"
+                                ? "border-amber-500/30 bg-amber-500/10 text-amber-400"
+                                : "border-red-500/30 bg-red-500/10 text-red-400",
+                            )}
+                          >
+                            {dalxLabel}
+                          </span>
+                        )}
+                      </div>
                     </div>
                     <div className="flex-shrink-0 text-right">
                       <p className="text-xs text-muted-foreground">
