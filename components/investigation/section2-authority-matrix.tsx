@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, ChevronDown, ChevronUp } from "lucide-react";
+import { Loader2, ChevronDown, ChevronUp, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { ExecutionClassRow } from "./investigation-workspace";
 
@@ -314,7 +314,12 @@ export function Section2AuthorityMatrix({
       )}
 
       {completedAt && (
-        <p className="text-xs text-emerald-700 font-medium">Section 2 complete — authority assigned for all {executionClasses.length} class(es).</p>
+        <div className="flex items-center gap-2 rounded-md border border-emerald-700/40 bg-emerald-500/5 px-3 py-2.5">
+          <Lock className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+          <p className="text-xs text-emerald-400 font-medium">
+            Section locked — authority assigned for all {executionClasses.length} class{executionClasses.length !== 1 ? "es" : ""}
+          </p>
+        </div>
       )}
     </div>
   );

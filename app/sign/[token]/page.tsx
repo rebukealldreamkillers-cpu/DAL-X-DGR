@@ -89,10 +89,13 @@ export default async function SignPage({
           <p className="text-xs font-mono text-muted-foreground uppercase tracking-wider">
             Jochanni Labs · Decision Governance Review
           </p>
-          <h1 className="text-xl font-semibold mt-1">Governance Defense File</h1>
-          <p className="text-sm text-muted-foreground mt-0.5">
-            {eng.companyName} · {wf.name}
-          </p>
+          <h1 className="text-xl font-semibold mt-1">{wf.name}</h1>
+          <p className="text-sm text-muted-foreground mt-0.5">{eng.companyName}</p>
+          {wf.businessOutcome && (
+            <p className="text-xs text-muted-foreground mt-2 leading-relaxed max-w-lg border-l-2 border-border pl-3">
+              {wf.businessOutcome}
+            </p>
+          )}
         </div>
 
         {/* Three-act framing */}
@@ -124,14 +127,29 @@ export default async function SignPage({
               <p className="text-sm leading-relaxed">{inv.dispositionReasoning}</p>
             )}
 
-            {/* Sponsor info */}
-            {inv?.sponsorName && (
-              <div className="pt-3 border-t text-xs text-muted-foreground space-y-0.5">
-                <p className="font-medium text-foreground">Defense file sponsor</p>
-                <p>{inv.sponsorName}{inv.sponsorTitle ? ` · ${inv.sponsorTitle}` : ""}</p>
-                {inv.sponsorEmail && <p>{inv.sponsorEmail}</p>}
+            {inv?.riskNote && (
+              <div className="pt-3 border-t space-y-1">
+                <p className="text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">Risk conditions</p>
+                <p className="text-xs text-muted-foreground leading-relaxed">{inv.riskNote}</p>
               </div>
             )}
+
+            {/* Record metadata */}
+            <div className="pt-3 border-t text-xs text-muted-foreground grid grid-cols-2 gap-1.5">
+              {inv?.analystName && (
+                <div>
+                  <span className="font-medium text-foreground">Analyst</span>
+                  <p>{inv.analystName}</p>
+                </div>
+              )}
+              {inv?.sponsorName && (
+                <div>
+                  <span className="font-medium text-foreground">Sponsor</span>
+                  <p>{inv.sponsorName}{inv.sponsorTitle ? ` · ${inv.sponsorTitle}` : ""}</p>
+                  {inv.sponsorEmail && <p>{inv.sponsorEmail}</p>}
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -201,6 +219,9 @@ export default async function SignPage({
         <SponsorSigningForm
           token={token}
           sponsorName={inv?.sponsorName ?? ""}
+          agentName={wf.name}
+          disposition={disposition ?? null}
+          analystName={inv?.analystName ?? null}
         />
 
         <p className="text-xs text-muted-foreground leading-relaxed border-t pt-4">

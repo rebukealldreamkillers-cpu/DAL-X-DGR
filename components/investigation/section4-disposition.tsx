@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Loader2 } from "lucide-react";
+import { Loader2, Lock } from "lucide-react";
 import { cn } from "@/lib/utils";
 import type { FullInvestigation } from "./investigation-workspace";
 
@@ -241,9 +241,12 @@ export function Section4Disposition({ agentId, investigation, completedAt, onCom
       </div>
 
       {completedAt && (
-        <p className="text-xs text-emerald-700 font-medium">
-          Section 4 complete — disposition: {investigation.disposition ?? "—"}
-        </p>
+        <div className="flex items-center gap-2 rounded-md border border-emerald-700/40 bg-emerald-500/5 px-3 py-2.5">
+          <Lock className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+          <p className="text-xs text-emerald-400 font-medium">
+            Decision record locked — disposition: {investigation.disposition ?? "—"}{investigation.analystName ? ` · ${investigation.analystName}` : ""}
+          </p>
+        </div>
       )}
     </div>
   );

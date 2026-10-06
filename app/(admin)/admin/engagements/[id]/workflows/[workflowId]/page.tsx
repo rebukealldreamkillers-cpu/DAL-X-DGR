@@ -5,7 +5,6 @@ import { getOrCreateInvestigationFull } from "@/lib/investigations";
 import { InvestigationWorkspace } from "@/components/investigation/investigation-workspace";
 import type { FullInvestigation } from "@/components/investigation/investigation-workspace";
 import { StageBadge } from "@/components/engagements/stage-badge";
-import { Separator } from "@/components/ui/separator";
 import { ChevronRight } from "lucide-react";
 import Link from "next/link";
 
@@ -78,7 +77,12 @@ export default async function WorkflowDetailPage({
         </div>
       </div>
 
-      <Separator />
+      <div className="flex items-center gap-2">
+        <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">
+          Decision Governance Review
+        </span>
+        <div className="flex-1 h-px bg-border" />
+      </div>
 
       {/* Investigation workspace */}
       {stage === "CENSUS" ? (

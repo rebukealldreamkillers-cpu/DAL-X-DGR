@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
-import { Loader2, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle } from "lucide-react";
+import { Loader2, Plus, Trash2, ChevronDown, ChevronUp, AlertTriangle, Lock } from "lucide-react";
 import type { ExecutionClassRow } from "./investigation-workspace";
 
 type Props = {
@@ -292,7 +292,12 @@ export function Section1ExecutionClasses({
       )}
 
       {completedAt && (
-        <p className="text-xs text-emerald-700 font-medium">Section 1 complete — {executionClasses.length} class(es) declared, {executionClasses.filter((ec) => ec.validationStatus === "VALIDATED").length} validated.</p>
+        <div className="flex items-center gap-2 rounded-md border border-emerald-700/40 bg-emerald-500/5 px-3 py-2.5">
+          <Lock className="w-3.5 h-3.5 text-emerald-500 flex-shrink-0" />
+          <p className="text-xs text-emerald-400 font-medium">
+            Section locked — {executionClasses.length} class{executionClasses.length !== 1 ? "es" : ""} declared, {executionClasses.filter((ec) => ec.validationStatus === "VALIDATED").length} validated
+          </p>
+        </div>
       )}
     </div>
   );

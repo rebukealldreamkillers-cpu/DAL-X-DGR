@@ -44,7 +44,14 @@
       "mcp__plugin_vercel_vercel__create_deployment",
       "Bash(node *)",
       "WebFetch(domain:jochannilabs.com)",
-      "Bash(grep -v \"^\\\\-\\\\-$\")"
+      "Bash(grep -v \"^\\\\-\\\\-$\")",
+      "Bash(git *)",
+      "mcp__plugin_vercel_vercel__list_drains",
+      "mcp__plugin_vercel_vercel__get_team",
+      "mcp__claude_ai_Claude_Docs__guide",
+      "mcp__claude_ai_Claude_Docs__batch",
+      "mcp__claude_ai_Claude_Docs__update",
+      "mcp__claude_ai_Claude_Docs__read"
     ]
   }
 }
